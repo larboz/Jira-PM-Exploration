@@ -85,6 +85,8 @@ def generate_cycle(client, cycle_num):
 
 
 def main():
+    from jira_sim.build_requirements_doc import upsert_requirements_page
+
     client = JiraClient()
     state = load_state()
     cycle_num = state.get("current_cycle", 0) + 1
@@ -92,6 +94,7 @@ def main():
     state["current_cycle"] = cycle_num
     state["cycle_started"] = date.today().isoformat()
     state.setdefault("history", []).append(result)
+    upsert_requirements_page(state, cycle_num, result["features"])
     save_state(state)
     print(f"Generated cycle {cycle_num}: {result}")
 

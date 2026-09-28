@@ -78,6 +78,8 @@ def cycle_is_complete(client, cycle_label):
 
 
 def main():
+    from jira_sim.build_requirements_doc import upsert_requirements_page
+
     client = JiraClient()
     state = load_state()
     cycle_num = state.get("current_cycle", 0)
@@ -85,6 +87,8 @@ def main():
     if cycle_num == 0:
         result = generate_cycle(client, 1)
         state["current_cycle"] = 1
+        state.setdefault("history", []).append(result)
+        upsert_requirements_page(state, 1, result["features"])
         save_state(state)
         print(f"Bootstrapped cycle 1: {result}")
         return
@@ -98,6 +102,7 @@ def main():
         result = generate_cycle(client, next_cycle)
         state["current_cycle"] = next_cycle
         state.setdefault("history", []).append(result)
+        upsert_requirements_page(state, next_cycle, result["features"])
         save_state(state)
         print(f"Cycle {cycle_num} complete — started cycle {next_cycle}: {result}")
 
