@@ -77,6 +77,18 @@ def cycle_is_complete(client, cycle_label):
     return len(remaining) == 0
 
 
+def _recover_features(client, cycle_label):
+    """Best-effort reconstruction of a cycle's feature list from Jira itself,
+    for a cycle that was bootstrapped before build_requirements_doc existed
+    (so it was never recorded in state['history'])."""
+    from jira_sim.templates import TEAM_TEMPLATES
+
+    suffix = TEAM_TEMPLATES["UXD"]["epic_name"].format(f="\0").replace("\0", "")
+    jql = f'labels = "{cycle_label}" AND issuetype = Epic AND project = UXD'
+    epics = client.search(jql, fields=["summary"])
+    return [e["fields"]["summary"].replace(suffix, "") for e in epics]
+
+
 def main():
     from jira_sim.build_requirements_doc import upsert_requirements_page
 
@@ -96,6 +108,16 @@ def main():
     cycle_label = f"cycle-{cycle_num}"
     summary = daily_pass(client, cycle_label)
     print(f"Cycle {cycle_num} daily pass: {summary}")
+
+    # Self-heal: a cycle bootstrapped before the Confluence integration
+    # existed never got a requirements page. Backfill it here instead of
+    # waiting for the next cycle rollover.
+    if "confluence_page_url" not in state:
+        history = state.get("history", [])
+        features = history[-1]["features"] if history else _recover_features(client, cycle_label)
+        upsert_requirements_page(state, cycle_num, features)
+        save_state(state)
+        print(f"Backfilled requirements doc for cycle {cycle_num}: {state['confluence_page_url']}")
 
     if cycle_is_complete(client, cycle_label):
         next_cycle = cycle_num + 1
