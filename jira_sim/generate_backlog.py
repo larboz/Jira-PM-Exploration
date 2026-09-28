@@ -37,7 +37,7 @@ def start_new_sprints(client, cycle_num):
         board_id = client.get_board_id(team)
         active = client.get_active_sprint(board_id)
         if active:
-            client.close_sprint(active["id"])
+            client.close_sprint(active["id"], fallback_start_iso=start_iso, fallback_end_iso=start_iso)
         sprint = client.create_sprint(board_id, f"Cycle {cycle_num}", start_iso, end_iso)
         client.start_sprint(sprint["id"], start_iso, end_iso)
         sprint_ids[team] = sprint["id"]

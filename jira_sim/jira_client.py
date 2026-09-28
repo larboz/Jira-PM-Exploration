@@ -149,9 +149,21 @@ class JiraClient:
             json={"name": current["name"], "state": "active", "startDate": start_iso, "endDate": end_iso},
         )
 
-    def close_sprint(self, sprint_id):
+    def close_sprint(self, sprint_id, fallback_start_iso=None, fallback_end_iso=None):
+        # A sprint that was auto-created but never actually started (e.g. the
+        # "Sprint 1" Jira drops into a brand-new Scrum project) has no dates
+        # yet, and Jira won't close it without one, so fall back to the dates
+        # of the sprint replacing it.
         current = self.agile_get(f"sprint/{sprint_id}")
-        self.agile_put(f"sprint/{sprint_id}", json={"name": current["name"], "state": "closed"})
+        self.agile_put(
+            f"sprint/{sprint_id}",
+            json={
+                "name": current["name"],
+                "state": "closed",
+                "startDate": current.get("startDate") or fallback_start_iso,
+                "endDate": current.get("endDate") or fallback_end_iso,
+            },
+        )
 
     def add_issues_to_sprint(self, sprint_id, issue_keys):
         if not issue_keys:
