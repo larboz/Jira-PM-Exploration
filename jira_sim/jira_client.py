@@ -141,10 +141,17 @@ class JiraClient:
         return self.agile_post("sprint", json=body)
 
     def start_sprint(self, sprint_id, start_iso, end_iso):
-        self.agile_put(f"sprint/{sprint_id}", json={"state": "active", "startDate": start_iso, "endDate": end_iso})
+        # Jira's sprint PUT requires "name" to be resent even when only the
+        # state/dates are changing, or it rejects with "Sprint name is required".
+        current = self.agile_get(f"sprint/{sprint_id}")
+        self.agile_put(
+            f"sprint/{sprint_id}",
+            json={"name": current["name"], "state": "active", "startDate": start_iso, "endDate": end_iso},
+        )
 
     def close_sprint(self, sprint_id):
-        self.agile_put(f"sprint/{sprint_id}", json={"state": "closed"})
+        current = self.agile_get(f"sprint/{sprint_id}")
+        self.agile_put(f"sprint/{sprint_id}", json={"name": current["name"], "state": "closed"})
 
     def add_issues_to_sprint(self, sprint_id, issue_keys):
         if not issue_keys:
