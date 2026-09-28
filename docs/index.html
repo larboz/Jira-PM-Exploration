@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fieldstone Commerce — Program Status</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb; --page: #f9f9f7; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --border: rgba(11,11,11,0.10); --grid: #e1e0d9;
+    --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface: #1a1a19; --page: #0d0d0d; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+      --border: rgba(255,255,255,0.10); --grid: #2c2c2a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 64px; background: var(--page); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 20px; }
+  h1 { font-size: 1.4rem; margin: 0; }
+  .muted { color: var(--muted); font-weight: normal; }
+  a { color: var(--ink); }
+  .status-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); }
+  .badge .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .badge.good .dot { background: var(--good); } .badge.warning .dot { background: var(--warning); } .badge.critical .dot { background: var(--critical); }
+  .stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .tile .value { font-size: 1.6rem; font-weight: 700; }
+  .tile .label { color: var(--ink-2); font-size: 0.85rem; }
+  h2 { font-size: 1.1rem; border-bottom: 1px solid var(--grid); padding-bottom: 6px; margin-top: 32px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--grid); font-size: 0.9rem; vertical-align: top; }
+  th { color: var(--ink-2); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .03em; }
+  .key { font-family: ui-monospace, monospace; color: var(--ink-2); font-size: 0.82rem; white-space: nowrap; }
+  .empty { color: var(--muted); font-style: italic; }
+  .team-card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--team-color); border-radius: 8px; padding: 14px 18px; margin-top: 14px; }
+  @media (prefers-color-scheme: dark) { .team-card { border-left-color: var(--team-color-dark); } }
+  .team-card h3 { margin: 0 0 10px; }
+  .team-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+  .team-cols h4 { margin: 0 0 6px; font-size: 0.8rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: .03em; }
+  .team-cols ul { margin: 0; padding-left: 18px; font-size: 0.88rem; }
+  .team-cols li { margin-bottom: 4px; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 0.82rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Fieldstone Commerce <span class="muted">Program Status</span></h1>
+    <div><span class="muted">Requirements doc not generated yet</span></div>
+  </header>
+
+  <div class="status-row">
+    <div class="badge warning"><span class="dot"></span>AT RISK</div>
+    <div class="badge"><strong>0%</strong>&nbsp;of Cycle 1 done</div>
+    <div class="badge"><strong>94</strong>&nbsp;days to 2026-12-31</div>
+  </div>
+
+  <div class="stat-tiles">
+    <div class="tile"><div class="value">76</div><div class="label">Total stories</div></div>
+    <div class="tile"><div class="value">0</div><div class="label">Done</div></div>
+    <div class="tile"><div class="value">25</div><div class="label">In progress</div></div>
+    <div class="tile"><div class="value">51</div><div class="label">Not started</div></div>
+    <div class="tile"><div class="value">16</div><div class="label">Blockers</div></div>
+  </div>
+
+  <h2>Blockers needing a look</h2>
+  <table>
+    <thead><tr><th>Ticket</th><th>Team</th><th>Summary</th><th>Why it's flagged</th></tr></thead>
+    <tbody><tr><td><span class="key">UXD-23</span></td><td>UI/UX</td><td>Hi-fi mockups for Subscription Boxes</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">UXD-18</span></td><td>UI/UX</td><td>Hi-fi mockups for Wishlist Sync</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">UXD-13</span></td><td>UI/UX</td><td>Hi-fi mockups for Checkout Redesign</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">UXD-8</span></td><td>UI/UX</td><td>Hi-fi mockups for Multi-Currency Support</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">INF-14</span></td><td>Infrastructure</td><td>Provision environment &amp; resources for Subscription Boxes</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">INF-10</span></td><td>Infrastructure</td><td>Provision environment &amp; resources for Wishlist Sync</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">INF-6</span></td><td>Infrastructure</td><td>Provision environment &amp; resources for Checkout Redesign</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">INF-2</span></td><td>Infrastructure</td><td>Provision environment &amp; resources for Multi-Currency Support</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">BE-18</span></td><td>Backend</td><td>Core service implementation for Subscription Boxes</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">BE-13</span></td><td>Backend</td><td>Core service implementation for Wishlist Sync</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">BE-8</span></td><td>Backend</td><td>Core service implementation for Checkout Redesign</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">BE-3</span></td><td>Backend</td><td>Core service implementation for Multi-Currency Support</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">API-18</span></td><td>API</td><td>Implement API endpoints for Subscription Boxes</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">API-13</span></td><td>API</td><td>Implement API endpoints for Wishlist Sync</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">API-8</span></td><td>API</td><td>Implement API endpoints for Checkout Redesign</td><td>Blocked on an upstream dependency</td></tr>
+<tr><td><span class="key">API-3</span></td><td>API</td><td>Implement API endpoints for Multi-Currency Support</td><td>Blocked on an upstream dependency</td></tr></tbody>
+  </table>
+
+  <h2>This cycle's features</h2>
+  <ul></ul>
+
+  <h2>By team</h2>
+  
+      <section class="team-card" style="--team-color:#2a78d6;--team-color-dark:#3987e5">
+        <h3>UI/UX <span class="muted">UXD</span></h3>
+        <div class="team-cols">
+          <div><h4>Done (0)</h4><ul><li class="empty">Nothing done yet</li></ul></div>
+          <div><h4>In progress (5)</h4><ul><li><span class="key">UXD-21</span> User flow mapping for Subscription Boxes</li>
+<li><span class="key">UXD-19</span> Design QA pass for Wishlist Sync</li>
+<li><span class="key">UXD-17</span> Wireframes for Wishlist Sync</li>
+<li><span class="key">UXD-16</span> User flow mapping for Wishlist Sync</li>
+<li><span class="key">UXD-11</span> User flow mapping for Checkout Redesign</li></ul></div>
+          <div><h4>Next (11)</h4><ul><li><span class="key">UXD-24</span> Design QA pass for Subscription Boxes</li>
+<li><span class="key">UXD-23</span> Hi-fi mockups for Subscription Boxes</li>
+<li><span class="key">UXD-22</span> Wireframes for Subscription Boxes</li>
+<li><span class="key">UXD-18</span> Hi-fi mockups for Wishlist Sync</li>
+<li><span class="key">UXD-14</span> Design QA pass for Checkout Redesign</li>
+<li><span class="key">UXD-13</span> Hi-fi mockups for Checkout Redesign</li>
+<li><span class="key">UXD-12</span> Wireframes for Checkout Redesign</li>
+<li><span class="key">UXD-9</span> Design QA pass for Multi-Currency Support</li>
+<li><span class="key">UXD-8</span> Hi-fi mockups for Multi-Currency Support</li>
+<li><span class="key">UXD-7</span> Wireframes for Multi-Currency Support</li>
+<li><span class="key">UXD-6</span> User flow mapping for Multi-Currency Support</li></ul></div>
+        </div>
+      </section>
+      <section class="team-card" style="--team-color:#eb6834;--team-color-dark:#d95926">
+        <h3>Infrastructure <span class="muted">INF</span></h3>
+        <div class="team-cols">
+          <div><h4>Done (0)</h4><ul><li class="empty">Nothing done yet</li></ul></div>
+          <div><h4>In progress (3)</h4><ul><li><span class="key">INF-15</span> Autoscaling policy for Subscription Boxes</li>
+<li><span class="key">INF-8</span> DB schema &amp; capacity planning for Checkout Redesign</li>
+<li><span class="key">INF-3</span> Autoscaling policy for Multi-Currency Support</li></ul></div>
+          <div><h4>Next (9)</h4><ul><li><span class="key">INF-16</span> DB schema &amp; capacity planning for Subscription Boxes</li>
+<li><span class="key">INF-14</span> Provision environment &amp; resources for Subscription Boxes</li>
+<li><span class="key">INF-12</span> DB schema &amp; capacity planning for Wishlist Sync</li>
+<li><span class="key">INF-11</span> Autoscaling policy for Wishlist Sync</li>
+<li><span class="key">INF-10</span> Provision environment &amp; resources for Wishlist Sync</li>
+<li><span class="key">INF-7</span> Autoscaling policy for Checkout Redesign</li>
+<li><span class="key">INF-6</span> Provision environment &amp; resources for Checkout Redesign</li>
+<li><span class="key">INF-4</span> DB schema &amp; capacity planning for Multi-Currency Support</li>
+<li><span class="key">INF-2</span> Provision environment &amp; resources for Multi-Currency Support</li></ul></div>
+        </div>
+      </section>
+      <section class="team-card" style="--team-color:#1baf7a;--team-color-dark:#199e70">
+        <h3>Backend <span class="muted">BE</span></h3>
+        <div class="team-cols">
+          <div><h4>Done (0)</h4><ul><li class="empty">Nothing done yet</li></ul></div>
+          <div><h4>In progress (4)</h4><ul><li><span class="key">BE-20</span> Backend code review for Subscription Boxes</li>
+<li><span class="key">BE-17</span> Data model design for Subscription Boxes</li>
+<li><span class="key">BE-9</span> Unit tests for Checkout Redesign service</li>
+<li><span class="key">BE-4</span> Unit tests for Multi-Currency Support service</li></ul></div>
+          <div><h4>Next (12)</h4><ul><li><span class="key">BE-19</span> Unit tests for Subscription Boxes service</li>
+<li><span class="key">BE-18</span> Core service implementation for Subscription Boxes</li>
+<li><span class="key">BE-15</span> Backend code review for Wishlist Sync</li>
+<li><span class="key">BE-14</span> Unit tests for Wishlist Sync service</li>
+<li><span class="key">BE-13</span> Core service implementation for Wishlist Sync</li>
+<li><span class="key">BE-12</span> Data model design for Wishlist Sync</li>
+<li><span class="key">BE-10</span> Backend code review for Checkout Redesign</li>
+<li><span class="key">BE-8</span> Core service implementation for Checkout Redesign</li>
+<li><span class="key">BE-7</span> Data model design for Checkout Redesign</li>
+<li><span class="key">BE-5</span> Backend code review for Multi-Currency Support</li>
+<li><span class="key">BE-3</span> Core service implementation for Multi-Currency Support</li>
+<li><span class="key">BE-2</span> Data model design for Multi-Currency Support</li></ul></div>
+        </div>
+      </section>
+      <section class="team-card" style="--team-color:#eda100;--team-color-dark:#c98500">
+        <h3>API <span class="muted">API</span></h3>
+        <div class="team-cols">
+          <div><h4>Done (0)</h4><ul><li class="empty">Nothing done yet</li></ul></div>
+          <div><h4>In progress (7)</h4><ul><li><span class="key">API-20</span> Publish API docs for Subscription Boxes</li>
+<li><span class="key">API-15</span> Publish API docs for Wishlist Sync</li>
+<li><span class="key">API-12</span> Define API contract for Wishlist Sync</li>
+<li><span class="key">API-10</span> Publish API docs for Checkout Redesign</li>
+<li><span class="key">API-9</span> API integration tests for Checkout Redesign</li>
+<li><span class="key">API-4</span> API integration tests for Multi-Currency Support</li>
+<li><span class="key">API-2</span> Define API contract for Multi-Currency Support</li></ul></div>
+          <div><h4>Next (9)</h4><ul><li><span class="key">API-19</span> API integration tests for Subscription Boxes</li>
+<li><span class="key">API-18</span> Implement API endpoints for Subscription Boxes</li>
+<li><span class="key">API-17</span> Define API contract for Subscription Boxes</li>
+<li><span class="key">API-14</span> API integration tests for Wishlist Sync</li>
+<li><span class="key">API-13</span> Implement API endpoints for Wishlist Sync</li>
+<li><span class="key">API-8</span> Implement API endpoints for Checkout Redesign</li>
+<li><span class="key">API-7</span> Define API contract for Checkout Redesign</li>
+<li><span class="key">API-5</span> Publish API docs for Multi-Currency Support</li>
+<li><span class="key">API-3</span> Implement API endpoints for Multi-Currency Support</li></ul></div>
+        </div>
+      </section>
+      <section class="team-card" style="--team-color:#e87ba4;--team-color-dark:#d55181">
+        <h3>Front End <span class="muted">FE</span></h3>
+        <div class="team-cols">
+          <div><h4>Done (0)</h4><ul><li class="empty">Nothing done yet</li></ul></div>
+          <div><h4>In progress (6)</h4><ul><li><span class="key">FE-20</span> Accessibility pass for Subscription Boxes</li>
+<li><span class="key">FE-18</span> Wire up API integration for Subscription Boxes</li>
+<li><span class="key">FE-17</span> Build UI components for Subscription Boxes</li>
+<li><span class="key">FE-10</span> Accessibility pass for Checkout Redesign</li>
+<li><span class="key">FE-3</span> Wire up API integration for Multi-Currency Support</li>
+<li><span class="key">FE-2</span> Build UI components for Multi-Currency Support</li></ul></div>
+          <div><h4>Next (10)</h4><ul><li><span class="key">FE-19</span> Cross-browser QA for Subscription Boxes</li>
+<li><span class="key">FE-15</span> Accessibility pass for Wishlist Sync</li>
+<li><span class="key">FE-14</span> Cross-browser QA for Wishlist Sync</li>
+<li><span class="key">FE-13</span> Wire up API integration for Wishlist Sync</li>
+<li><span class="key">FE-12</span> Build UI components for Wishlist Sync</li>
+<li><span class="key">FE-9</span> Cross-browser QA for Checkout Redesign</li>
+<li><span class="key">FE-8</span> Wire up API integration for Checkout Redesign</li>
+<li><span class="key">FE-7</span> Build UI components for Checkout Redesign</li>
+<li><span class="key">FE-5</span> Accessibility pass for Multi-Currency Support</li>
+<li><span class="key">FE-4</span> Cross-browser QA for Multi-Currency Support</li></ul></div>
+        </div>
+      </section>
+
+  <footer>Cycle 1 &middot; generated 2026-09-28 17:27 UTC &middot; <a href="https://github.com/larboz/Jira-PM-Exploration">source</a></footer>
+</div>
+</body>
+</html>
