@@ -45,21 +45,34 @@ Two more things get generated automatically each cycle:
 - A **requirements page in Confluence** (program overview, the teams, this cycle's
   features, the dependency chain) — created once, then updated in place each cycle.
 - A **live status dashboard**, published as a static site via GitHub Pages, showing
-  whether the program looks on track, the current blockers, and a done / in-progress /
-  next breakdown per team. It links back to the Confluence page.
+  whether the program looks on track, a **What's blocked** table (ticket, assignee,
+  and a comment explaining why), a **What's behind** table (ticket, assignee, and the
+  due date it missed), and a done / in-progress / next breakdown per team. It links
+  back to the Confluence page.
+
+Every story gets story points (1/2/3/5/8), a due date, and a real assignee, drawn
+from a small fictional roster (`config/people.json`). Jira's assignee field only
+accepts a real Atlassian account, so those "people" are real users invited to your
+Jira site under email aliases — see step 7 below. Anyone not yet invited is just
+left unassigned until they are; nothing breaks in the meantime.
 
 ## Repo layout
 
 ```
 jira_sim/
-  jira_client.py          Jira Cloud REST + Agile API wrapper (issues, links, sprints)
+  jira_client.py          Jira Cloud REST + Agile API wrapper (issues, links, sprints, comments)
   confluence_client.py    Confluence Cloud REST API wrapper (pages)
   templates.py            feature pool + per-team epic/story templates + dependency map
+  people.py               resolves config/people.json emails to real Jira accountIds
+  blocking.py             shared "is this issue blocked, and by what" helper
   generate_backlog.py     builds one cycle's worth of epics/stories/links/sprints
-  daily_update.py         advances/stalls tickets, detects cycle completion
+  daily_update.py         advances/blocks tickets (posts a comment when newly blocked), detects cycle completion
   build_requirements_doc.py  creates/updates the Confluence requirements page
   build_dashboard.py      renders docs/index.html, the status dashboard
   state.py                reads/writes state/cycle_state.json
+config/
+  teams.json              company/teams config
+  people.json             the fictional roster (name + email alias per person)
 state/
   cycle_state.json        which cycle we're on, Confluence page id (committed by the workflow)
 docs/
@@ -112,15 +125,37 @@ repo, so it needs this.
 ### 6. Turn on GitHub Pages
 
 Settings → Pages → Source: **Deploy from a branch** → Branch: **main**, folder **/docs**
-→ Save. (The `docs/index.html` file doesn't exist until step 7 runs once, so if Pages
-complains there's nothing to serve yet, that's expected — come back after step 7.)
+→ Save. (The `docs/index.html` file doesn't exist until step 8 runs once, so if Pages
+complains there's nothing to serve yet, that's expected — come back after step 8.)
 
-### 7. Kick off cycle 1
+### 7. Invite the fictional roster as real Jira users
+
+Jira won't let you assign a ticket to a name that isn't a real Atlassian account, so
+the 5 fictional people in `config/people.json` need to actually exist as users on your
+Jira site. The easiest way: use Gmail "+alias" addresses of your own inbox — mail to
+`you+jordan@gmail.com` still lands in your normal inbox, but Jira treats it as a
+separate account.
+
+In Jira: **Settings (gear icon) → System → Invite user** (or **User management**),
+and invite exactly these 5 addresses:
+
+- `larboz+jordan@gmail.com` — Jordan Lee
+- `larboz+priya@gmail.com` — Priya Nair
+- `larboz+marcus@gmail.com` — Marcus Webb
+- `larboz+casey@gmail.com` — Casey Alvarez
+- `larboz+devon@gmail.com` — Devon Park
+
+Each invite email lands in your normal Gmail inbox — open each one and accept it (you
+may need to set a name/password for that "account" the first time). Anyone whose
+invite you haven't accepted yet is simply left unassigned on tickets until you do —
+nothing else breaks, so you can do this before or after step 8.
+
+### 8. Kick off cycle 1
 
 Go to the Actions tab → "Daily Jira Update" → "Run workflow". This bootstraps the first
-cycle (epics/stories/links/sprints), creates the Confluence requirements page, and
-builds the dashboard. After that, it runs automatically every day on the schedule in
-the workflow file.
+cycle (epics/stories/links/sprints, with story points/due dates/assignees), creates the
+Confluence requirements page, and builds the dashboard. After that, it runs
+automatically every day on the schedule in the workflow file.
 
 ## Running locally (optional, for testing)
 

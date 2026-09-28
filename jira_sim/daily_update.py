@@ -2,27 +2,18 @@
 backlog over into a new cycle once everything in the current one is Done.
 
 Run once a day by .github/workflows/daily-update.yml. Deliberately has no LLM
-calls in it — it's pure randomness over Jira's REST API, so it's cheap to run
+calls in it -- it's pure randomness over Jira's REST API, so it's cheap to run
 and cheap to re-run.
 """
 import random
 
+from jira_sim.blocking import find_blocker
 from jira_sim.generate_backlog import generate_cycle
 from jira_sim.jira_client import JiraClient
 from jira_sim.state import load_state, save_state
 
 ADVANCE_PROBABILITY = 0.35  # chance an unblocked open story moves forward one step
-STALL_PROBABILITY = 0.12  # chance an in-progress story gets flagged at-risk instead
 STATUS_ORDER = ["To Do", "In Progress", "Done"]
-
-
-def is_blocked(issue):
-    for link in issue["fields"].get("issuelinks", []):
-        if link.get("type", {}).get("name") == "Blocks" and "inwardIssue" in link:
-            blocker = link["inwardIssue"]
-            if blocker["fields"]["status"]["name"] != "Done":
-                return True
-    return False
 
 
 def daily_pass(client, cycle_label):
@@ -31,42 +22,39 @@ def daily_pass(client, cycle_label):
     open_issues = [i for i in issues if i["fields"]["status"]["name"] != "Done"]
     random.shuffle(open_issues)
 
-    advanced = blocked_count = stalled = unflagged = 0
+    advanced = blocked_count = newly_blocked = unflagged = 0
 
     for issue in open_issues:
         key = issue["key"]
         status = issue["fields"]["status"]["name"]
         labels = issue["fields"].get("labels", [])
-        blocked = is_blocked(issue)
+        blocker_key, blocker_summary, blocker_status = find_blocker(issue)
 
-        if blocked:
+        if blocker_key:
             if "blocked" not in labels:
                 client.set_labels(key, labels + ["blocked"])
+                client.add_comment(
+                    key,
+                    f'Blocked by {blocker_key}: "{blocker_summary}" is still {blocker_status}.',
+                )
+                newly_blocked += 1
             blocked_count += 1
             continue
         elif "blocked" in labels:
             client.set_labels(key, [l for l in labels if l != "blocked"])
-            labels = [l for l in labels if l != "blocked"]
             unflagged += 1
 
-        roll = random.random()
-        if roll < ADVANCE_PROBABILITY:
+        if random.random() < ADVANCE_PROBABILITY:
             idx = STATUS_ORDER.index(status)
             if idx < len(STATUS_ORDER) - 1:
                 if client.transition_to(key, STATUS_ORDER[idx + 1]):
                     advanced += 1
-                    if "at-risk" in labels:
-                        client.set_labels(key, [l for l in labels if l != "at-risk"])
-        elif roll < ADVANCE_PROBABILITY + STALL_PROBABILITY and status == "In Progress":
-            if "at-risk" not in labels:
-                client.set_labels(key, labels + ["at-risk"])
-                stalled += 1
 
     return {
         "open_total": len(open_issues),
         "advanced": advanced,
-        "newly_blocked_or_still_blocked": blocked_count,
-        "newly_stalled": stalled,
+        "blocked": blocked_count,
+        "newly_blocked": newly_blocked,
         "unblocked_this_pass": unflagged,
     }
 
@@ -126,7 +114,7 @@ def main():
         state.setdefault("history", []).append(result)
         upsert_requirements_page(state, next_cycle, result["features"])
         save_state(state)
-        print(f"Cycle {cycle_num} complete — started cycle {next_cycle}: {result}")
+        print(f"Cycle {cycle_num} complete -- started cycle {next_cycle}: {result}")
 
 
 if __name__ == "__main__":

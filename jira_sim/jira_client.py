@@ -9,6 +9,18 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 
+def _flatten_adf(node):
+    """Flattens an Atlassian Document Format node tree down to plain text."""
+    if not node:
+        return ""
+    if isinstance(node, str):
+        return node
+    parts = [node.get("text", "")] if node.get("type") == "text" else []
+    for child in node.get("content", []) or []:
+        parts.append(_flatten_adf(child))
+    return "".join(parts)
+
+
 class JiraClient:
     def __init__(self, site=None, email=None, token=None):
         self.site = (site or os.environ["JIRA_SITE"]).rstrip("/")
@@ -19,6 +31,7 @@ class JiraClient:
         self.session.headers.update(
             {"Accept": "application/json", "Content-Type": "application/json"}
         )
+        self._field_cache = None
 
     # --- raw HTTP: platform REST API (issues, links, search) -----------------
 
@@ -66,7 +79,24 @@ class JiraClient:
 
     # --- issue helpers ---------------------------------------------------------
 
-    def create_issue(self, project_key, summary, issue_type, parent_key=None, labels=None):
+    def get_field_id(self, field_name):
+        """Looks up a (possibly custom) field's id by its display name, e.g.
+        "Story point estimate". Cached for the life of the client."""
+        if self._field_cache is None:
+            self._field_cache = {f["name"]: f["id"] for f in self.get("field")}
+        return self._field_cache.get(field_name)
+
+    def create_issue(
+        self,
+        project_key,
+        summary,
+        issue_type,
+        parent_key=None,
+        labels=None,
+        story_points=None,
+        due_date=None,
+        assignee_account_id=None,
+    ):
         fields = {
             "project": {"key": project_key},
             "summary": summary,
@@ -76,8 +106,34 @@ class JiraClient:
             fields["parent"] = {"key": parent_key}
         if labels:
             fields["labels"] = labels
+        if due_date:
+            fields["duedate"] = due_date
+        if assignee_account_id:
+            fields["assignee"] = {"accountId": assignee_account_id}
+        if story_points is not None:
+            field_id = self.get_field_id("Story point estimate") or self.get_field_id("Story Points")
+            if field_id:
+                fields[field_id] = story_points
         data = self.post("issue", json={"fields": fields})
         return data["key"]
+
+    def add_comment(self, issue_key, text):
+        body = {
+            "body": {
+                "type": "doc",
+                "version": 1,
+                "content": [{"type": "paragraph", "content": [{"type": "text", "text": text}]}],
+            }
+        }
+        self.post(f"issue/{issue_key}/comment", json=body)
+
+    def get_latest_comment(self, issue_key):
+        """Plain-text body of the most recent comment on an issue, or None."""
+        data = self.get(f"issue/{issue_key}/comment", params={"orderBy": "-created", "maxResults": 1})
+        comments = data.get("comments", [])
+        if not comments:
+            return None
+        return _flatten_adf(comments[0].get("body")).strip() or None
 
     def set_labels(self, issue_key, labels):
         self.put(f"issue/{issue_key}", json={"fields": {"labels": labels}})

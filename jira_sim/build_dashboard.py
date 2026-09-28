@@ -7,6 +7,7 @@ same GitHub Actions workflow.
 import os
 from datetime import date, datetime
 
+from jira_sim.blocking import find_blocker
 from jira_sim.jira_client import JiraClient
 from jira_sim.state import load_state
 from jira_sim.templates import TEAM_ORDER
@@ -34,57 +35,136 @@ TEAM_COLOR_DARK = {
     "API": "#c98500",
     "FE": "#d55181",
 }
+# Layman's terms + "so what" per team, shown on the dashboard so a non-technical
+# exec reading it knows why a given team's slip actually matters.
+TEAM_BLURBS = {
+    "UXD": {
+        "what": "Designs what shoppers actually see: page layouts, product imagery, the overall look and feel.",
+        "so_what": "Every other team is building against these designs. If UX slips, nothing customer-facing can start.",
+    },
+    "INF": {
+        "what": "Builds the AWS plumbing underneath everything: servers, databases, autoscaling.",
+        "so_what": "Nothing can safely go live without this. A finished feature with nowhere reliable to run isn't shippable.",
+    },
+    "BE": {
+        "what": "Builds the core logic and data behind the scenes: orders, inventory, pricing rules.",
+        "so_what": "This is the real engine. If it slips, the API and front end have nothing real to connect to.",
+    },
+    "API": {
+        "what": "Connects the storefront to the backend, and opens the same data up to outside partners.",
+        "so_what": "If this slips, the front end has nothing to call, and partner integrations stall too.",
+    },
+    "FE": {
+        "what": "Builds the actual website: what a shopper clicks, types, and buys through.",
+        "so_what": "This is the last mile. Everything upstream can be finished and it still won't reach a customer.",
+    },
+}
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "index.html")
+JIRA_SITE = os.environ.get("JIRA_SITE", "").rstrip("/")
 
 
-def gather(client, cycle_label):
-    jql = f'labels = "{cycle_label}" AND issuetype = Story'
-    issues = client.search(jql, fields=["summary", "status", "labels", "project"])
-    by_team = {t: {"done": [], "in_progress": [], "todo": []} for t in TEAM_ORDER}
-    blockers = []
-    for issue in issues:
-        team = issue["fields"]["project"]["key"]
-        status = issue["fields"]["status"]["name"]
-        labels = issue["fields"].get("labels", [])
-        entry = {"key": issue["key"], "summary": issue["fields"]["summary"]}
-        bucket = by_team.setdefault(team, {"done": [], "in_progress": [], "todo": []})
-        if status == "Done":
-            bucket["done"].append(entry)
-        elif status == "In Progress":
-            bucket["in_progress"].append(entry)
-        else:
-            bucket["todo"].append(entry)
-        if "blocked" in labels:
-            blockers.append({**entry, "team": team, "reason": "Blocked on an upstream dependency"})
-        elif "at-risk" in labels:
-            blockers.append({**entry, "team": team, "reason": "Stalled in progress"})
-    return by_team, blockers
+def _issue_url(key):
+    return f"{JIRA_SITE}/browse/{key}" if JIRA_SITE else "#"
 
 
 def _esc(s):
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def gather(client, cycle_label):
+    sp_field_id = client.get_field_id("Story point estimate") or client.get_field_id("Story Points")
+    fields = ["summary", "status", "labels", "project", "issuelinks", "assignee", "duedate"]
+    if sp_field_id:
+        fields.append(sp_field_id)
+
+    jql = f'labels = "{cycle_label}" AND issuetype = Story'
+    issues = client.search(jql, fields=fields)
+
+    by_team = {t: {"done": [], "in_progress": [], "todo": []} for t in TEAM_ORDER}
+    blocked_rows = []
+    behind_rows = []
+    today = date.today()
+
+    for issue in issues:
+        f = issue["fields"]
+        team = f["project"]["key"]
+        status = f["status"]["name"]
+        points = f.get(sp_field_id) if sp_field_id else None
+        assignee = f.get("assignee")
+        assignee_name = assignee["displayName"] if assignee else "Unassigned"
+        due_raw = f.get("duedate")
+
+        entry = {"key": issue["key"], "summary": f["summary"], "points": points}
+        bucket = by_team.setdefault(team, {"done": [], "in_progress": [], "todo": []})
+        if status == "Done":
+            bucket["done"].append(entry)
+            continue
+        elif status == "In Progress":
+            bucket["in_progress"].append(entry)
+        else:
+            bucket["todo"].append(entry)
+
+        blocker_key, blocker_summary, blocker_status = find_blocker(issue)
+        if blocker_key:
+            comment = client.get_latest_comment(issue["key"])
+            blocked_rows.append(
+                {
+                    "key": issue["key"],
+                    "team": team,
+                    "assignee": assignee_name,
+                    "comment": comment or "No comment logged yet.",
+                }
+            )
+        elif due_raw:
+            due = datetime.strptime(due_raw, "%Y-%m-%d").date()
+            if due < today:
+                behind_rows.append(
+                    {
+                        "key": issue["key"],
+                        "team": team,
+                        "assignee": assignee_name,
+                        "due": due_raw,
+                    }
+                )
+
+    return by_team, blocked_rows, behind_rows
+
+
+def _points_sum(entries):
+    return sum(e.get("points") or 0 for e in entries)
+
+
 def _story_list(entries, empty_text):
     if not entries:
         return f'<li class="empty">{empty_text}</li>'
-    return "\n".join(f'<li><span class="key">{e["key"]}</span> {_esc(e["summary"])}</li>' for e in entries)
+    items = []
+    for e in entries:
+        pts = f' <span class="pts">{e["points"]}pt</span>' if e.get("points") else ""
+        items.append(
+            f'<li><a href="{_issue_url(e["key"])}"><span class="key">{e["key"]}</span></a> {_esc(e["summary"])}{pts}</li>'
+        )
+    return "\n".join(items)
 
 
-def render(cycle_num, features, by_team, blockers, requirements_url):
+def render(cycle_num, features, by_team, blocked_rows, behind_rows, requirements_url):
     total = sum(len(b["done"]) + len(b["in_progress"]) + len(b["todo"]) for b in by_team.values())
     done = sum(len(b["done"]) for b in by_team.values())
     in_progress = sum(len(b["in_progress"]) for b in by_team.values())
     todo = sum(len(b["todo"]) for b in by_team.values())
     pct = round(100 * done / total) if total else 0
     days_left = (QUARTER_END - date.today()).days
-    blocked_ratio = (len(blockers) / total) if total else 0
+
+    total_points = sum(_points_sum(b["done"]) + _points_sum(b["in_progress"]) + _points_sum(b["todo"]) for b in by_team.values())
+    done_points = sum(_points_sum(b["done"]) for b in by_team.values())
+
+    flagged = len(blocked_rows) + len(behind_rows)
+    flagged_ratio = (flagged / total) if total else 0
 
     if days_left < 0:
         status_key, status_label = "critical", "PAST TARGET DATE"
-    elif blocked_ratio >= 0.3:
+    elif flagged_ratio >= 0.3:
         status_key, status_label = "critical", "BEHIND"
-    elif blocked_ratio >= 0.15:
+    elif flagged_ratio >= 0.15:
         status_key, status_label = "warning", "AT RISK"
     else:
         status_key, status_label = "good", "ON TRACK"
@@ -92,9 +172,11 @@ def render(cycle_num, features, by_team, blockers, requirements_url):
     team_sections = []
     for key in TEAM_ORDER:
         b = by_team.get(key, {"done": [], "in_progress": [], "todo": []})
+        blurb = TEAM_BLURBS[key]
         team_sections.append(f"""
       <section class="team-card" style="--team-color:{TEAM_COLOR_LIGHT[key]};--team-color-dark:{TEAM_COLOR_DARK[key]}">
         <h3>{TEAM_NAMES[key]} <span class="muted">{key}</span></h3>
+        <p class="team-blurb">{blurb['what']} <strong>So what:</strong> {blurb['so_what']}</p>
         <div class="team-cols">
           <div><h4>Done ({len(b['done'])})</h4><ul>{_story_list(b['done'], 'Nothing done yet')}</ul></div>
           <div><h4>In progress ({len(b['in_progress'])})</h4><ul>{_story_list(b['in_progress'], 'Nothing in progress')}</ul></div>
@@ -102,14 +184,25 @@ def render(cycle_num, features, by_team, blockers, requirements_url):
         </div>
       </section>""")
 
-    if blockers:
-        blocker_rows = "\n".join(
-            f'<tr><td><span class="key">{b["key"]}</span></td><td>{TEAM_NAMES.get(b["team"], b["team"])}</td>'
-            f'<td>{_esc(b["summary"])}</td><td>{b["reason"]}</td></tr>'
-            for b in blockers
+    if blocked_rows:
+        blocked_html = "\n".join(
+            f'<tr><td><a href="{_issue_url(r["key"])}"><span class="key">{r["key"]}</span></a></td>'
+            f'<td>{TEAM_NAMES.get(r["team"], r["team"])}</td>'
+            f'<td>{_esc(r["assignee"])}</td><td>{_esc(r["comment"])}</td></tr>'
+            for r in blocked_rows
         )
     else:
-        blocker_rows = '<tr><td colspan="4" class="empty">No blockers right now.</td></tr>'
+        blocked_html = '<tr><td colspan="4" class="empty">Nothing blocked right now.</td></tr>'
+
+    if behind_rows:
+        behind_html = "\n".join(
+            f'<tr><td><a href="{_issue_url(r["key"])}"><span class="key">{r["key"]}</span></a></td>'
+            f'<td>{TEAM_NAMES.get(r["team"], r["team"])}</td>'
+            f'<td>{_esc(r["assignee"])}</td><td>{r["due"]}</td></tr>'
+            for r in behind_rows
+        )
+    else:
+        behind_html = '<tr><td colspan="4" class="empty">Nothing past its due date right now.</td></tr>'
 
     features_html = "".join(f"<li>{_esc(f)}</li>" for f in features)
     generated = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
@@ -124,7 +217,7 @@ def render(cycle_num, features, by_team, blockers, requirements_url):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fieldstone Commerce — Program Status</title>
+<title>Fieldstone Commerce - Program Status</title>
 <style>
   :root {{
     color-scheme: light;
@@ -162,10 +255,12 @@ def render(cycle_num, features, by_team, blockers, requirements_url):
   th, td {{ text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--grid); font-size: 0.9rem; vertical-align: top; }}
   th {{ color: var(--ink-2); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .03em; }}
   .key {{ font-family: ui-monospace, monospace; color: var(--ink-2); font-size: 0.82rem; white-space: nowrap; }}
+  .pts {{ font-size: 0.75rem; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; margin-left: 2px; }}
   .empty {{ color: var(--muted); font-style: italic; }}
   .team-card {{ background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--team-color); border-radius: 8px; padding: 14px 18px; margin-top: 14px; }}
   @media (prefers-color-scheme: dark) {{ .team-card {{ border-left-color: var(--team-color-dark); }} }}
   .team-card h3 {{ margin: 0 0 10px; }}
+  .team-blurb {{ margin: 0 0 12px; font-size: 0.88rem; color: var(--ink-2); }}
   .team-cols {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }}
   .team-cols h4 {{ margin: 0 0 6px; font-size: 0.8rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: .03em; }}
   .team-cols ul {{ margin: 0; padding-left: 18px; font-size: 0.88rem; }}
@@ -191,13 +286,19 @@ def render(cycle_num, features, by_team, blockers, requirements_url):
     <div class="tile"><div class="value">{done}</div><div class="label">Done</div></div>
     <div class="tile"><div class="value">{in_progress}</div><div class="label">In progress</div></div>
     <div class="tile"><div class="value">{todo}</div><div class="label">Not started</div></div>
-    <div class="tile"><div class="value">{len(blockers)}</div><div class="label">Blockers</div></div>
+    <div class="tile"><div class="value">{done_points}/{total_points}</div><div class="label">Story points done</div></div>
   </div>
 
-  <h2>Blockers needing a look</h2>
+  <h2>What's blocked ({len(blocked_rows)})</h2>
   <table>
-    <thead><tr><th>Ticket</th><th>Team</th><th>Summary</th><th>Why it's flagged</th></tr></thead>
-    <tbody>{blocker_rows}</tbody>
+    <thead><tr><th>Ticket</th><th>Team</th><th>Assignee</th><th>Why it's blocked</th></tr></thead>
+    <tbody>{blocked_html}</tbody>
+  </table>
+
+  <h2>What's behind ({len(behind_rows)})</h2>
+  <table>
+    <thead><tr><th>Ticket</th><th>Team</th><th>Assignee</th><th>Due date</th></tr></thead>
+    <tbody>{behind_html}</tbody>
   </table>
 
   <h2>This cycle's features</h2>
@@ -222,11 +323,11 @@ def main():
     requirements_url = state.get("confluence_page_url")
 
     if cycle_num == 0:
-        by_team, blockers = {t: {"done": [], "in_progress": [], "todo": []} for t in TEAM_ORDER}, []
+        by_team, blocked_rows, behind_rows = {t: {"done": [], "in_progress": [], "todo": []} for t in TEAM_ORDER}, [], []
     else:
-        by_team, blockers = gather(client, f"cycle-{cycle_num}")
+        by_team, blocked_rows, behind_rows = gather(client, f"cycle-{cycle_num}")
 
-    html = render(cycle_num, features, by_team, blockers, requirements_url)
+    html = render(cycle_num, features, by_team, blocked_rows, behind_rows, requirements_url)
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         f.write(html)

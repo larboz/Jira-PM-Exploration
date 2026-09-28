@@ -12,6 +12,7 @@ import random
 from datetime import date, datetime, timedelta
 
 from jira_sim.jira_client import JiraClient
+from jira_sim.people import load_roster
 from jira_sim.state import load_state, save_state
 from jira_sim.templates import (
     DEPENDENCIES,
@@ -22,6 +23,17 @@ from jira_sim.templates import (
 )
 
 SPRINT_LENGTH_DAYS = 21  # informational only; sprints are actually closed when a cycle completes
+
+STORY_POINTS_POOL = [1, 2, 3, 5, 8]
+# Due dates are staggered to follow the same pipeline as DEPENDENCIES, so
+# "behind" tickets show up first in upstream teams, same as in real life.
+TEAM_DUE_OFFSET_DAYS = {"UXD": 7, "INF": 7, "BE": 12, "API": 17, "FE": 22}
+
+
+def _due_date_for(team):
+    base = TEAM_DUE_OFFSET_DAYS.get(team, 14)
+    offset = base + random.randint(-2, 3)
+    return (date.today() + timedelta(days=offset)).isoformat()
 
 
 def _iso(dt):
@@ -50,6 +62,10 @@ def generate_cycle(client, cycle_num):
 
     sprint_ids = start_new_sprints(client, cycle_num)
 
+    roster = load_roster(client)
+    if not roster:
+        print("No roster members found yet (invites not accepted) -- tickets will be unassigned.")
+
     # created[(team, feature, story_id)] = issue key; "__epic__" holds the epic key
     created = {}
     stories_by_team = {team: [] for team in TEAM_ORDER}
@@ -60,8 +76,16 @@ def generate_cycle(client, cycle_num):
             epic_key = client.create_issue(team, tpl["epic_name"].format(f=f), "Epic", labels=[label])
             created[(team, f, "__epic__")] = epic_key
             for story_id, story_tpl in tpl["stories"].items():
+                assignee = random.choice(roster) if roster else None
                 story_key = client.create_issue(
-                    team, story_tpl.format(f=f), "Story", parent_key=epic_key, labels=[label]
+                    team,
+                    story_tpl.format(f=f),
+                    "Story",
+                    parent_key=epic_key,
+                    labels=[label],
+                    story_points=random.choice(STORY_POINTS_POOL),
+                    due_date=_due_date_for(team),
+                    assignee_account_id=assignee["account_id"] if assignee else None,
                 )
                 created[(team, f, story_id)] = story_key
                 stories_by_team[team].append(story_key)
