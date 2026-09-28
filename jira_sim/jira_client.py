@@ -105,18 +105,20 @@ class JiraClient:
         return False
 
     def search(self, jql, fields=None, max_results=100):
+        # Atlassian retired /rest/api/3/search (HTTP 410) in favor of this
+        # cursor-paginated endpoint: startAt/total are gone, replaced by
+        # nextPageToken. See https://developer.atlassian.com/changelog/#CHANGE-2046
         fields = fields or ["summary", "status", "labels", "issuelinks"]
-        results, start_at = [], 0
+        results, next_token = [], None
         while True:
-            data = self.post(
-                "search",
-                json={"jql": jql, "startAt": start_at, "maxResults": max_results, "fields": fields},
-            )
+            body = {"jql": jql, "maxResults": max_results, "fields": fields}
+            if next_token:
+                body["nextPageToken"] = next_token
+            data = self.post("search/jql", json=body)
             issues = data.get("issues", [])
             results.extend(issues)
-            total = data.get("total", len(results))
-            start_at += len(issues)
-            if not issues or start_at >= total:
+            next_token = data.get("nextPageToken")
+            if not issues or not next_token:
                 break
         return results
 
