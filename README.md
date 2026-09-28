@@ -27,7 +27,7 @@ UXD (mockups) ───────────┐
 INF (env/db) ──► BE (services) ──► API (endpoints) ──► FE (integration)
 ```
 
-A story can't be marked Done by the weekly update while its upstream dependency is still
+A story can't be marked Done by the daily update while its upstream dependency is still
 open — it gets labeled `blocked` instead, which is exactly the kind of thing a program
 manager needs surfaced.
 
@@ -66,7 +66,7 @@ jira_sim/
   people.py               resolves config/people.json emails to real Jira accountIds
   blocking.py             shared "is this issue blocked, and by what" helper
   generate_backlog.py     builds one cycle's worth of epics/stories/links/sprints
-  daily_update.py         advances/blocks tickets (posts a comment when newly blocked), detects cycle completion -- runs weekly despite the filename
+  daily_update.py         advances/blocks tickets (posts a comment when newly blocked), detects cycle completion
   build_requirements_doc.py  creates/updates the Confluence requirements page
   build_dashboard.py      renders docs/index.html, the status dashboard
   state.py                reads/writes state/cycle_state.json
@@ -78,7 +78,7 @@ state/
 docs/
   index.html              the published dashboard (GitHub Pages serves this)
 .github/workflows/
-  daily-update.yml        the weekly cron job (filename kept as-is)
+  daily-update.yml        the daily cron job
 ```
 
 ## One-time setup (do this before the automation can run)
@@ -119,7 +119,7 @@ In this repo: Settings → Secrets and variables → Actions → New repository 
 ### 5. Allow the workflow to push
 
 Settings → Actions → General → Workflow permissions → select **"Read and write
-permissions"**. The weekly job commits the updated cycle state and dashboard back to the
+permissions"**. The daily job commits the updated cycle state and dashboard back to the
 repo, so it needs this.
 
 ### 6. Turn on GitHub Pages
@@ -152,11 +152,10 @@ nothing else breaks, so you can do this before or after step 8.
 
 ### 8. Kick off cycle 1
 
-Go to the Actions tab → "Weekly Jira Update" → "Run workflow". This bootstraps the first
+Go to the Actions tab → "Daily Jira Update" → "Run workflow". This bootstraps the first
 cycle (epics/stories/links/sprints, with story points/due dates/assignees), creates the
 Confluence requirements page, and builds the dashboard. After that, it runs
-automatically every Monday on the schedule in the workflow file -- or any time you want
-via "Run workflow".
+automatically every day on the schedule in the workflow file.
 
 ## Running locally (optional, for testing)
 

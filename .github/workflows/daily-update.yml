@@ -1,9 +1,9 @@
-name: Weekly Jira Update
+name: Daily Jira Update
 
 on:
   schedule:
-    # 13:00 UTC every Monday = 8am Central (7am during standard time)
-    - cron: "0 13 * * 1"
+    # 13:00 UTC = 8am Central (7am during standard time)
+    - cron: "0 13 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Run weekly update
+      - name: Run daily update
         env:
           JIRA_SITE: ${{ secrets.JIRA_SITE }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
@@ -41,5 +41,5 @@ jobs:
           git config user.name "jira-sim-bot"
           git config user.email "actions@github.com"
           git add state/cycle_state.json docs/index.html
-          git diff --cached --quiet || git commit -m "Weekly update: $(date -u +%Y-%m-%d)"
+          git diff --cached --quiet || git commit -m "Daily update: $(date -u +%Y-%m-%d)"
           git push
