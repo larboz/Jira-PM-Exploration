@@ -1,9 +1,11 @@
-"""The daily churn: advances some stories, stalls/blocks others, and rolls the
+"""The periodic churn: advances some stories, blocks others, and rolls the
 backlog over into a new cycle once everything in the current one is Done.
 
-Run once a day by .github/workflows/daily-update.yml. Deliberately has no LLM
-calls in it -- it's pure randomness over Jira's REST API, so it's cheap to run
-and cheap to re-run.
+Run once a week by .github/workflows/daily-update.yml (kept its original
+filename/module name even though the schedule is now weekly, to avoid
+touching every reference to it). Deliberately has no LLM calls in it -- it's
+pure randomness over Jira's REST API, so it's cheap to run and cheap to
+re-run.
 """
 import random
 
@@ -12,7 +14,7 @@ from jira_sim.generate_backlog import generate_cycle
 from jira_sim.jira_client import JiraClient
 from jira_sim.state import load_state, save_state
 
-ADVANCE_PROBABILITY = 0.35  # chance an unblocked open story moves forward one step
+ADVANCE_PROBABILITY = 0.35  # chance an unblocked open story moves forward one step, per run
 STATUS_ORDER = ["To Do", "In Progress", "Done"]
 
 
@@ -95,7 +97,7 @@ def main():
 
     cycle_label = f"cycle-{cycle_num}"
     summary = daily_pass(client, cycle_label)
-    print(f"Cycle {cycle_num} daily pass: {summary}")
+    print(f"Cycle {cycle_num} weekly pass: {summary}")
 
     # Self-heal: a cycle bootstrapped before the Confluence integration
     # existed never got a requirements page. Backfill it here instead of
