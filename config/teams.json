@@ -1,0 +1,32 @@
+{
+  "company": "Fieldstone Commerce",
+  "quarter_end": "2026-12-31",
+  "teams": [
+    {
+      "key": "UXD",
+      "name": "UI/UX",
+      "description": "User experience journeys and design collateral (images, gifs, backgrounds) for the store."
+    },
+    {
+      "key": "INF",
+      "name": "Infrastructure",
+      "description": "AWS: environments, autoscaling, databases, Kubernetes."
+    },
+    {
+      "key": "BE",
+      "name": "Backend",
+      "description": "Core services and business logic."
+    },
+    {
+      "key": "API",
+      "name": "API",
+      "description": "Bridges front end and backend; exposes data to third parties."
+    },
+    {
+      "key": "FE",
+      "name": "Front End",
+      "description": "HTML/CSS/JS storefront experience."
+    }
+  ],
+  "generation_order": ["UXD", "INF", "BE", "API", "FE"]
+}

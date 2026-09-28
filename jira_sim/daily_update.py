@@ -1,0 +1,106 @@
+"""The daily churn: advances some stories, stalls/blocks others, and rolls the
+backlog over into a new cycle once everything in the current one is Done.
+
+Run once a day by .github/workflows/daily-update.yml. Deliberately has no LLM
+calls in it — it's pure randomness over Jira's REST API, so it's cheap to run
+and cheap to re-run.
+"""
+import random
+
+from jira_sim.generate_backlog import generate_cycle
+from jira_sim.jira_client import JiraClient
+from jira_sim.state import load_state, save_state
+
+ADVANCE_PROBABILITY = 0.35  # chance an unblocked open story moves forward one step
+STALL_PROBABILITY = 0.12  # chance an in-progress story gets flagged at-risk instead
+STATUS_ORDER = ["To Do", "In Progress", "Done"]
+
+
+def is_blocked(issue):
+    for link in issue["fields"].get("issuelinks", []):
+        if link.get("type", {}).get("name") == "Blocks" and "inwardIssue" in link:
+            blocker = link["inwardIssue"]
+            if blocker["fields"]["status"]["name"] != "Done":
+                return True
+    return False
+
+
+def daily_pass(client, cycle_label):
+    jql = f'labels = "{cycle_label}" AND issuetype = Story'
+    issues = client.search(jql, fields=["summary", "status", "issuelinks", "labels"])
+    open_issues = [i for i in issues if i["fields"]["status"]["name"] != "Done"]
+    random.shuffle(open_issues)
+
+    advanced = blocked_count = stalled = unflagged = 0
+
+    for issue in open_issues:
+        key = issue["key"]
+        status = issue["fields"]["status"]["name"]
+        labels = issue["fields"].get("labels", [])
+        blocked = is_blocked(issue)
+
+        if blocked:
+            if "blocked" not in labels:
+                client.set_labels(key, labels + ["blocked"])
+            blocked_count += 1
+            continue
+        elif "blocked" in labels:
+            client.set_labels(key, [l for l in labels if l != "blocked"])
+            labels = [l for l in labels if l != "blocked"]
+            unflagged += 1
+
+        roll = random.random()
+        if roll < ADVANCE_PROBABILITY:
+            idx = STATUS_ORDER.index(status)
+            if idx < len(STATUS_ORDER) - 1:
+                if client.transition_to(key, STATUS_ORDER[idx + 1]):
+                    advanced += 1
+                    if "at-risk" in labels:
+                        client.set_labels(key, [l for l in labels if l != "at-risk"])
+        elif roll < ADVANCE_PROBABILITY + STALL_PROBABILITY and status == "In Progress":
+            if "at-risk" not in labels:
+                client.set_labels(key, labels + ["at-risk"])
+                stalled += 1
+
+    return {
+        "open_total": len(open_issues),
+        "advanced": advanced,
+        "newly_blocked_or_still_blocked": blocked_count,
+        "newly_stalled": stalled,
+        "unblocked_this_pass": unflagged,
+    }
+
+
+def cycle_is_complete(client, cycle_label):
+    jql = f'labels = "{cycle_label}" AND issuetype = Story AND status != Done'
+    remaining = client.search(jql, fields=["summary"], max_results=1)
+    return len(remaining) == 0
+
+
+def main():
+    client = JiraClient()
+    state = load_state()
+    cycle_num = state.get("current_cycle", 0)
+
+    if cycle_num == 0:
+        result = generate_cycle(client, 1)
+        state["current_cycle"] = 1
+        save_state(state)
+        print(f"Bootstrapped cycle 1: {result}")
+        return
+
+    cycle_label = f"cycle-{cycle_num}"
+    summary = daily_pass(client, cycle_label)
+    print(f"Cycle {cycle_num} daily pass: {summary}")
+
+    if cycle_is_complete(client, cycle_label):
+        next_cycle = cycle_num + 1
+        result = generate_cycle(client, next_cycle)
+        state["current_cycle"] = next_cycle
+        state.setdefault("history", []).append(result)
+        save_state(state)
+        print(f"Cycle {cycle_num} complete — started cycle {next_cycle}: {result}")
+
+
+if __name__ == "__main__":
+    main()
