@@ -1,10 +1,15 @@
-"""Generates one cycle's worth of epics/stories and wires cross-team dependencies.
+"""Generates one cycle's worth of epics/stories, starts a fresh sprint per team,
+and wires the cross-team dependencies.
 
 Called directly to bootstrap cycle 1, or automatically by daily_update.py once a
 cycle's stories are all Done.
+
+Each of the 5 team-managed Scrum projects gets its own sprint per cycle (named
+"Cycle N"). Only one sprint can be active per board on the free plan, so before
+starting a new one we close whatever is currently active.
 """
 import random
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from jira_sim.jira_client import JiraClient
 from jira_sim.state import load_state, save_state
@@ -16,13 +21,38 @@ from jira_sim.templates import (
     TEAM_TEMPLATES,
 )
 
+SPRINT_LENGTH_DAYS = 21  # informational only; sprints are actually closed when a cycle completes
+
+
+def _iso(dt):
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
+def start_new_sprints(client, cycle_num):
+    """Close each team's active sprint (if any) and start a fresh 'Cycle N' sprint."""
+    start_iso = _iso(datetime.utcnow())
+    end_iso = _iso(datetime.utcnow() + timedelta(days=SPRINT_LENGTH_DAYS))
+    sprint_ids = {}
+    for team in TEAM_ORDER:
+        board_id = client.get_board_id(team)
+        active = client.get_active_sprint(board_id)
+        if active:
+            client.close_sprint(active["id"])
+        sprint = client.create_sprint(board_id, f"Cycle {cycle_num}", start_iso, end_iso)
+        client.start_sprint(sprint["id"], start_iso, end_iso)
+        sprint_ids[team] = sprint["id"]
+    return sprint_ids
+
 
 def generate_cycle(client, cycle_num):
     features = random.sample(FEATURE_POOL, k=min(NUM_FEATURES_PER_CYCLE, len(FEATURE_POOL)))
     label = f"cycle-{cycle_num}"
 
+    sprint_ids = start_new_sprints(client, cycle_num)
+
     # created[(team, feature, story_id)] = issue key; "__epic__" holds the epic key
     created = {}
+    stories_by_team = {team: [] for team in TEAM_ORDER}
 
     for team in TEAM_ORDER:
         tpl = TEAM_TEMPLATES[team]
@@ -34,6 +64,10 @@ def generate_cycle(client, cycle_num):
                     team, story_tpl.format(f=f), "Story", parent_key=epic_key, labels=[label]
                 )
                 created[(team, f, story_id)] = story_key
+                stories_by_team[team].append(story_key)
+
+    for team, keys in stories_by_team.items():
+        client.add_issues_to_sprint(sprint_ids[team], keys)
 
     for (dep_team, dep_story), (blocker_team, blocker_story) in DEPENDENCIES:
         for f in features:
@@ -42,7 +76,12 @@ def generate_cycle(client, cycle_num):
             if blocked_key and blocker_key:
                 client.link_blocks(blocker_key, blocked_key)
 
-    return {"cycle": cycle_num, "features": features, "issues_created": len(created)}
+    return {
+        "cycle": cycle_num,
+        "features": features,
+        "issues_created": len(created),
+        "sprint_ids": sprint_ids,
+    }
 
 
 def main():

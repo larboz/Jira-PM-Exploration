@@ -35,6 +35,11 @@ When every story in a cycle reaches Done, the next cycle is generated automatica
 a fresh (but similarly-shaped) set of features. Nothing about this depends on a chat
 session being open — it all runs on GitHub Actions.
 
+Each project is a **Team-managed Scrum** board, so each cycle also gets its own sprint
+per team (named "Cycle N"), created and started automatically, with that team's stories
+for the cycle added to it. Only one sprint can be active per board at a time on the free
+plan, so the previous cycle's sprint is closed right before the next one starts.
+
 ## Repo layout
 
 ```
@@ -54,8 +59,8 @@ state/
 
 ### 1. Create the 5 Jira projects
 
-In your Jira Cloud site, create 5 **Team-managed** projects with the **Kanban** template
-(the default 3-column board: To Do / In Progress / Done is exactly what the automation
+In your Jira Cloud site, create 5 **Team-managed** projects with the **Scrum** template
+(the default 3-column workflow: To Do / In Progress / Done is exactly what the automation
 expects). Use these exact keys:
 
 - `UXD` — name it "UI/UX"
