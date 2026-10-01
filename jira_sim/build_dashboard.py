@@ -7,6 +7,7 @@ same GitHub Actions workflow.
 import os
 from datetime import date, datetime, timedelta, timezone
 
+from jira_sim.archive import archive_current
 from jira_sim.blocking import find_blocker
 from jira_sim.charts import burndown_chart, team_status_chart
 from jira_sim.decisions import load_open_decisions
@@ -263,7 +264,7 @@ def _story_list(entries, empty_text):
     return "\n".join(items)
 
 
-def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, issue_rows, decisions, burndown, requirements_url):
+def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, issue_rows, decisions, burndown, requirements_url, latest_archive_date=None):
     total = sum(len(b["done"]) + len(b["in_progress"]) + len(b["todo"]) for b in by_team.values())
     done = sum(len(b["done"]) for b in by_team.values())
     in_progress = sum(len(b["in_progress"]) for b in by_team.values())
@@ -350,10 +351,14 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
 
     features_html = "".join(f"<li>{_esc(f)}</li>" for f in features)
     generated = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    today_str = date.today().isoformat()
     req_link = (
         f'<a href="{requirements_url}">Requirements doc &#8594;</a>'
         if requirements_url
         else '<span class="muted">Requirements doc not generated yet</span>'
+    )
+    prev_day_link = (
+        f'<a href="history/{latest_archive_date}.html">&larr; Previous day</a>' if latest_archive_date else ""
     )
 
     team_chart_html = team_status_chart(by_team, TEAM_ORDER, TEAM_NAMES)
@@ -365,6 +370,7 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="dashboard-generated-date" content="{today_str}">
 <title>Fieldstone Commerce - Program Status</title>
 <style>
   :root {{
@@ -390,6 +396,8 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
   .wrap {{ max-width: 960px; margin: 0 auto; }}
   header {{ display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 20px; }}
   .header-links {{ display: flex; gap: 14px; }}
+  .history-nav {{ display: flex; justify-content: space-between; gap: 12px; margin: -10px 0 18px; font-size: 0.85rem; }}
+  .history-nav a {{ color: var(--ink-2); }}
   h1 {{ font-size: 1.4rem; margin: 0; }}
   .muted {{ color: var(--muted); font-weight: normal; }}
   a {{ color: var(--ink); }}
@@ -435,6 +443,7 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
   <header>
     <h1>Fieldstone Commerce <span class="muted">Program Status</span></h1>
     <div class="header-links">
+      {prev_day_link}
       <a href="weekly.html">Weekly status &#8594;</a>
       {req_link}
     </div>
@@ -524,11 +533,19 @@ def main():
     else:
         by_team, blocked_rows, behind_rows, risk_rows, issue_rows, burndown = gather(client, f"cycle-{cycle_num}")
 
-    html = render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, issue_rows, decisions, burndown, requirements_url)
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    docs_dir = os.path.dirname(OUTPUT_PATH)
+    latest_archive_date = archive_current(docs_dir)
+
+    html = render(
+        cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, issue_rows, decisions, burndown,
+        requirements_url, latest_archive_date=latest_archive_date,
+    )
+    os.makedirs(docs_dir, exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         f.write(html)
     print(f"Wrote dashboard for cycle {cycle_num} to {OUTPUT_PATH}")
+    if latest_archive_date:
+        print(f"Archived prior page as docs/history/{latest_archive_date}.html")
 
 
 if __name__ == "__main__":
