@@ -3,6 +3,7 @@
     {
       "id": "d1",
       "question": "If a feature won't make the cycle deadline, do we cut scope or push the date?",
+      "exec_summary": "No standing policy yet for handling a feature that slips its deadline. Worth setting one before it comes up for real.",
       "raised": "2026-09-28",
       "status": "open",
       "decision": null,
@@ -11,6 +12,7 @@
     {
       "id": "d2",
       "question": "Checkout Redesign's backend code review (BE-10) is paused -- the hi-fi mockups were reworked for a late payments-team fee-disclosure requirement, and we're holding review until the backend is confirmed to match. The Oct 15 target is now at risk. Push the date, cut scope, or pull in help to catch up?",
+      "exec_summary": "Checkout Redesign is at risk of missing its Oct 15 target, due to a late requirement change from the payments team. Working to determine options.",
       "raised": "2026-10-01",
       "status": "open",
       "decision": null,
@@ -19,6 +21,7 @@
     {
       "id": "d3",
       "question": "Subscription Boxes (Dec 15 target) still has open work in every team, and the remaining runway crosses Thanksgiving and the December holidays when capacity typically drops. Pull the target in now, add resourcing, or accept the risk and monitor?",
+      "exec_summary": "Subscription Boxes (Dec 15 target) still has work remaining across every team, and the final stretch overlaps the Thanksgiving and December holidays, when capacity typically drops. Working to determine options to protect the date.",
       "raised": "2026-10-01",
       "status": "open",
       "decision": null,

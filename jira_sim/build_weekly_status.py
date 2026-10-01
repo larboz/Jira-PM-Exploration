@@ -210,13 +210,16 @@ def _coming_up_lines(next_feature_teams, progress, milestones_by_feature, in_pro
 
 
 def _attention_lines(open_decisions):
-    """Open items straight from config/decisions.json -- each one was
-    written (by hand or via a scenario injection) to already read like an
-    executive concern with the reasoning spelled out, so no further
-    translation is needed here."""
+    """Open items from config/decisions.json, in the short risk-plus-status
+    framing an executive audience needs: what's at risk, and that it's being
+    worked. The tactical options (push date vs. cut scope vs. add resourcing,
+    which specific ticket is the holdup) are a program-manager-level call,
+    not something to pose as a menu to executives -- that detail stays in
+    "question", surfaced on the daily tracker instead. Falls back to
+    "question" only if a decision was logged without an exec_summary."""
     if not open_decisions:
-        return ['<li class="empty">Nothing needs an executive call this week.</li>']
-    lines = [f'<li class="warn">{_esc(d["question"])}</li>' for d in open_decisions]
+        return ['<li class="empty">Nothing needs executive attention this week.</li>']
+    lines = [f'<li class="warn">{_esc(d.get("exec_summary") or d["question"])}</li>' for d in open_decisions]
     return lines[:MAX_LINES]
 
 
