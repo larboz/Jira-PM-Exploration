@@ -1,0 +1,16 @@
+{
+  "milestones": [
+    {"id": "m1", "feature": "Checkout Redesign", "name": "Checkout Redesign launch", "target_date": "2026-10-15"},
+    {"id": "m2", "feature": "Guest Checkout", "name": "Guest Checkout launch", "target_date": "2026-10-22"},
+    {"id": "m3", "feature": "Order Tracking Timeline", "name": "Order Tracking Timeline launch", "target_date": "2026-10-29"},
+    {"id": "m4", "feature": "Product Recommendations", "name": "Product Recommendations GA", "target_date": "2026-11-05"},
+    {"id": "m5", "feature": "Wishlist Sync", "name": "Wishlist Sync launch", "target_date": "2026-11-12"},
+    {"id": "m6", "feature": "Multi-Currency Support", "name": "Multi-Currency Support GA", "target_date": "2026-11-19"},
+    {"id": "m7", "feature": "Seller Storefronts", "name": "Seller Storefronts launch", "target_date": "2026-11-26"},
+    {"id": "m8", "feature": "Loyalty Program", "name": "Loyalty Program launch", "target_date": "2026-12-03"},
+    {"id": "m9", "feature": "Gift Card Wallet", "name": "Gift Card Wallet launch", "target_date": "2026-12-10"},
+    {"id": "m10", "feature": "Subscription Boxes", "name": "Subscription Boxes beta", "target_date": "2026-12-15"},
+    {"id": "m11", "feature": "Live Inventory Alerts", "name": "Live Inventory Alerts GA", "target_date": "2026-12-20"},
+    {"id": "m12", "feature": "One-Click Reorder", "name": "One-Click Reorder launch", "target_date": "2026-12-29"}
+  ]
+}

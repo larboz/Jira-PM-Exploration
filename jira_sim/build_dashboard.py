@@ -13,9 +13,9 @@ from jira_sim.charts import burndown_chart, team_status_chart
 from jira_sim.decisions import load_open_decisions
 from jira_sim.jira_client import JiraClient
 from jira_sim.state import load_state
+from jira_sim.status import QUARTER_END, compute_status
 from jira_sim.templates import TEAM_ORDER
 
-QUARTER_END = date(2026, 12, 31)
 STALE_DAYS = 5  # no activity in this many days -> flagged as an "Issue"
 RISK_POINTS_THRESHOLD = 5  # story points at/above this count as "big" for risk purposes
 CHOKEPOINT_THRESHOLD = 2  # blocking this many other stories makes a ticket a "chokepoint" risk
@@ -185,6 +185,7 @@ def gather(client, cycle_label):
                     "team": team,
                     "assignee": assignee_name,
                     "comment": comment or "No comment logged yet.",
+                    "summary": f["summary"],
                 }
             )
             blocker_counts[blocker_key] = blocker_counts.get(blocker_key, 0) + 1
@@ -217,7 +218,7 @@ def gather(client, cycle_label):
         if points and points >= RISK_POINTS_THRESHOLD and (blocker_key or is_behind):
             entry = risk_by_key.setdefault(
                 issue["key"],
-                {"key": issue["key"], "team": team, "assignee": assignee_name, "points": points, "reasons": []},
+                {"key": issue["key"], "team": team, "assignee": assignee_name, "points": points, "summary": f["summary"], "reasons": []},
             )
             entry["reasons"].append(f"{points}-pt story, {'blocked' if blocker_key else 'past due'}")
 
@@ -236,6 +237,7 @@ def gather(client, cycle_label):
                 "team": bf["project"]["key"],
                 "assignee": (bf.get("assignee") or {}).get("displayName", "Unassigned"),
                 "points": bf.get(sp_field_id) if sp_field_id else None,
+                "summary": bf["summary"],
                 "reasons": [],
             },
         )
@@ -276,16 +278,7 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
     done_points = sum(_points_sum(b["done"]) for b in by_team.values())
 
     flagged = len(blocked_rows) + len(behind_rows)
-    flagged_ratio = (flagged / total) if total else 0
-
-    if days_left < 0:
-        status_key, status_label = "critical", "PAST TARGET DATE"
-    elif flagged_ratio >= 0.3:
-        status_key, status_label = "critical", "BEHIND"
-    elif flagged_ratio >= 0.15:
-        status_key, status_label = "warning", "AT RISK"
-    else:
-        status_key, status_label = "good", "ON TRACK"
+    status_key, status_label = compute_status(total, flagged, days_left)
 
     team_sections = []
     for key in TEAM_ORDER:

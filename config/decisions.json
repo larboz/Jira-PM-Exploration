@@ -7,6 +7,22 @@
       "status": "open",
       "decision": null,
       "decided_date": null
+    },
+    {
+      "id": "d2",
+      "question": "Checkout Redesign's hi-fi mockups (UXD-13) are overdue after a late payments-team change -- the Oct 15 target is now at risk. Push the date, cut scope, or pull in help to catch up?",
+      "raised": "2026-10-01",
+      "status": "open",
+      "decision": null,
+      "decided_date": null
+    },
+    {
+      "id": "d3",
+      "question": "Subscription Boxes (Dec 15 target) still has open work in every team, and the remaining runway crosses Thanksgiving and the December holidays when capacity typically drops. Pull the target in now, add resourcing, or accept the risk and monitor?",
+      "raised": "2026-10-01",
+      "status": "open",
+      "decision": null,
+      "decided_date": null
     }
   ]
 }

@@ -138,6 +138,9 @@ class JiraClient:
     def set_labels(self, issue_key, labels):
         self.put(f"issue/{issue_key}", json={"fields": {"labels": labels}})
 
+    def set_due_date(self, issue_key, due_date_iso):
+        self.put(f"issue/{issue_key}", json={"fields": {"duedate": due_date_iso}})
+
     def link_blocks(self, blocker_key, blocked_key):
         """blocker_key 'blocks' blocked_key (blocked_key 'is blocked by' blocker_key)."""
         self.post(
