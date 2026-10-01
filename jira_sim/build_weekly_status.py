@@ -1,9 +1,11 @@
 """Builds a rolling weekly status page -- a Project Status Report Template
-layout (banner, Project/Date meta row, a Time/Quality/Budget RAG row) with
-four sections written in plain, executive-friendly language: What We
-Achieved This Week, What's In Progress, What's Coming Up, and Areas for
-Attention (open decisions that need an executive call). No ticket keys or
-story-point jargon in the narrative itself -- that detail lives on the
+layout (banner, Project/Date meta row, a Time/Quality/Budget RAG row)
+followed by five sections in plain, executive-friendly language, in the
+order an executive reads them: Highlights (a condensed teaser -- top
+milestone, top unblock, a wins count), Areas for Attention (open decisions
+that need an executive call), What Was Completed (the fuller detail behind
+the highlights), What's In Progress, and What's Coming Up. No ticket keys
+or story-point jargon in the narrative itself -- that detail lives on the
 daily tracker, which this page links to.
 
 Regenerated daily alongside the main dashboard so it always reflects a
@@ -87,6 +89,41 @@ def _feature_progress(by_team):
 
 def _fmt_date(d):
     return datetime.strptime(d, "%Y-%m-%d").strftime("%b %-d") if isinstance(d, str) else d.strftime("%b %-d")
+
+
+def _highlights_lines(completed_features, progress, milestones_by_feature, unblocked_features, total_completed_count):
+    """A condensed, top-of-page teaser: the single most notable milestone,
+    the single most notable unblock, and a one-line wins count -- each
+    detailed further down in 'What Was Completed'."""
+    lines = []
+
+    for feature in sorted(completed_features):
+        p = progress.get(feature)
+        if not p or p["remaining"] != 0:
+            continue
+        m = milestones_by_feature.get(feature)
+        if not m:
+            continue
+        target = date.fromisoformat(m["target_date"])
+        today = date.today()
+        if today <= target:
+            lines.append(f'<li class="good"><strong>{_esc(m["name"])}</strong> shipped on time.</li>')
+        else:
+            days_late = (today - target).days
+            lines.append(f'<li class="warn"><strong>{_esc(m["name"])}</strong> shipped {days_late} day{"s" if days_late != 1 else ""} late.</li>')
+        break
+
+    for feature in sorted(unblocked_features):
+        lines.append(f'<li class="good"><strong>{_esc(feature)}</strong> is unblocked and moving again.</li>')
+        break
+
+    if total_completed_count:
+        lines.append(f'<li>{total_completed_count} items wrapped up across the program this week.</li>')
+
+    if not lines:
+        lines.append('<li class="empty">Quiet week overall.</li>')
+
+    return lines[:3]
 
 
 def _achieved_lines(completed_features, progress, milestones_by_feature, unblocked_features, total_completed_count):
@@ -233,15 +270,17 @@ def gather(client, cycle_num, features):
 
     milestones_by_feature = {m["feature"]: m for m in milestones_for_cycle(features)}
 
+    highlights = _highlights_lines(completed_features, progress, milestones_by_feature, unblocked_features, len(completed))
     achieved = _achieved_lines(completed_features, progress, milestones_by_feature, unblocked_features, len(completed))
     in_prog = _in_progress_lines(in_progress_features, progress, milestones_by_feature, risk_features)
     coming_up = _coming_up_lines(next_feature_teams, progress, milestones_by_feature, in_progress_features)
     attention = _attention_lines(load_open_decisions())
 
-    return achieved, in_prog, coming_up, attention, status_key, status_label
+    return highlights, achieved, in_prog, coming_up, attention, status_key, status_label
 
 
-def render(achieved, in_progress, coming_up, attention, status_key, status_label, cycle_num):
+def render(highlights, achieved, in_progress, coming_up, attention, status_key, status_label, cycle_num):
+    highlights_html = "\n".join(highlights)
     achieved_html = "\n".join(achieved)
     in_progress_html = "\n".join(in_progress)
     coming_up_html = "\n".join(coming_up)
@@ -330,7 +369,13 @@ def render(achieved, in_progress, coming_up, attention, status_key, status_label
     </td></tr>
   </table>
 
-  <h2>What We Achieved This Week</h2>
+  <h2>Highlights</h2>
+  <ul>{highlights_html}</ul>
+
+  <h2>Areas for Attention</h2>
+  <ul>{attention_html}</ul>
+
+  <h2>What Was Completed</h2>
   <ul>{achieved_html}</ul>
 
   <h2>What's In Progress</h2>
@@ -338,9 +383,6 @@ def render(achieved, in_progress, coming_up, attention, status_key, status_label
 
   <h2>What's Coming Up</h2>
   <ul>{coming_up_html}</ul>
-
-  <h2>Areas for Attention</h2>
-  <ul>{attention_html}</ul>
 
   <footer>Generated {generated_full} &middot; <a href="https://github.com/larboz/Jira-PM-Exploration">source</a></footer>
 </div>
@@ -357,11 +399,11 @@ def main():
     features = history[-1]["features"] if history else []
 
     if cycle_num == 0:
-        achieved, in_progress, coming_up, attention, status_key, status_label = [], [], [], [], "good", "ON TRACK"
+        highlights, achieved, in_progress, coming_up, attention, status_key, status_label = [], [], [], [], [], "good", "ON TRACK"
     else:
-        achieved, in_progress, coming_up, attention, status_key, status_label = gather(client, cycle_num, features)
+        highlights, achieved, in_progress, coming_up, attention, status_key, status_label = gather(client, cycle_num, features)
 
-    html = render(achieved, in_progress, coming_up, attention, status_key, status_label, cycle_num)
+    html = render(highlights, achieved, in_progress, coming_up, attention, status_key, status_label, cycle_num)
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         f.write(html)
