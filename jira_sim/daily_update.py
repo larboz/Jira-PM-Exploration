@@ -97,12 +97,22 @@ def main():
     summary = daily_pass(client, cycle_label)
     print(f"Cycle {cycle_num} daily pass: {summary}")
 
-    # Self-heal: a cycle bootstrapped before the Confluence integration
+    # Self-heal #1: a cycle bootstrapped before state["history"] was tracked
+    # never recorded its feature list, which silently starves anything that
+    # reads it later (milestones, the dashboard's feature list) long before
+    # the next cycle rollover would naturally fix it. Recover it from Jira
+    # itself and persist it so this only ever needs to run once per cycle.
+    if not state.get("history"):
+        recovered = _recover_features(client, cycle_label)
+        state.setdefault("history", []).append({"cycle": cycle_num, "features": recovered})
+        save_state(state)
+        print(f"Backfilled state history for cycle {cycle_num}: {recovered}")
+
+    # Self-heal #2: a cycle bootstrapped before the Confluence integration
     # existed never got a requirements page. Backfill it here instead of
     # waiting for the next cycle rollover.
     if "confluence_page_url" not in state:
-        history = state.get("history", [])
-        features = history[-1]["features"] if history else _recover_features(client, cycle_label)
+        features = state["history"][-1]["features"]
         upsert_requirements_page(state, cycle_num, features)
         save_state(state)
         print(f"Backfilled requirements doc for cycle {cycle_num}: {state['confluence_page_url']}")

@@ -1,5 +1,11 @@
 {
   "current_cycle": 1,
   "confluence_page_id": "425986",
-  "confluence_page_url": "https://larboz13.atlassian.net/wiki/pages/viewpage.action?pageId=425986"
+  "confluence_page_url": "https://larboz13.atlassian.net/wiki/pages/viewpage.action?pageId=425986",
+  "history": [
+    {
+      "cycle": 1,
+      "features": ["Checkout Redesign", "Multi-Currency Support", "Subscription Boxes", "Wishlist Sync"]
+    }
+  ]
 }
