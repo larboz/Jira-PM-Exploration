@@ -1,9 +1,10 @@
 """Builds a rolling weekly status page -- a Project Status Report Template
 layout (banner, Project/Date meta row, a Time/Quality/Budget RAG row) with
-exactly three narrative sections written in plain, executive-friendly
-language: What We Achieved This Week, What's In Progress, What's Coming Up.
-No ticket keys or story-point jargon in the narrative itself -- that detail
-lives on the daily tracker, which this page links to.
+four sections written in plain, executive-friendly language: What We
+Achieved This Week, What's In Progress, What's Coming Up, and Areas for
+Attention (open decisions that need an executive call). No ticket keys or
+story-point jargon in the narrative itself -- that detail lives on the
+daily tracker, which this page links to.
 
 Regenerated daily alongside the main dashboard so it always reflects a
 trailing 7-day window -- no separate schedule needed.
@@ -13,6 +14,7 @@ from datetime import date, datetime
 
 from jira_sim.blocking import find_blocker
 from jira_sim.build_dashboard import gather as gather_dashboard_data
+from jira_sim.decisions import load_open_decisions
 from jira_sim.jira_client import JiraClient
 from jira_sim.milestones import milestone_status, milestones_for_cycle
 from jira_sim.state import load_state
@@ -170,6 +172,17 @@ def _coming_up_lines(next_feature_teams, progress, milestones_by_feature, in_pro
     return lines[:MAX_LINES]
 
 
+def _attention_lines(open_decisions):
+    """Open items straight from config/decisions.json -- each one was
+    written (by hand or via a scenario injection) to already read like an
+    executive concern with the reasoning spelled out, so no further
+    translation is needed here."""
+    if not open_decisions:
+        return ['<li class="empty">Nothing needs an executive call this week.</li>']
+    lines = [f'<li class="warn">{_esc(d["question"])}</li>' for d in open_decisions]
+    return lines[:MAX_LINES]
+
+
 def gather(client, cycle_num, features):
     completed = client.search(
         f"issuetype = Story AND status = Done AND resolutiondate >= -7d AND project in ({PROJECT_LIST})",
@@ -223,14 +236,16 @@ def gather(client, cycle_num, features):
     achieved = _achieved_lines(completed_features, progress, milestones_by_feature, unblocked_features, len(completed))
     in_prog = _in_progress_lines(in_progress_features, progress, milestones_by_feature, risk_features)
     coming_up = _coming_up_lines(next_feature_teams, progress, milestones_by_feature, in_progress_features)
+    attention = _attention_lines(load_open_decisions())
 
-    return achieved, in_prog, coming_up, status_key, status_label
+    return achieved, in_prog, coming_up, attention, status_key, status_label
 
 
-def render(achieved, in_progress, coming_up, status_key, status_label, cycle_num):
+def render(achieved, in_progress, coming_up, attention, status_key, status_label, cycle_num):
     achieved_html = "\n".join(achieved)
     in_progress_html = "\n".join(in_progress)
     coming_up_html = "\n".join(coming_up)
+    attention_html = "\n".join(attention)
     generated_full = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     today_str = date.today().isoformat()
 
@@ -324,6 +339,9 @@ def render(achieved, in_progress, coming_up, status_key, status_label, cycle_num
   <h2>What's Coming Up</h2>
   <ul>{coming_up_html}</ul>
 
+  <h2>Areas for Attention</h2>
+  <ul>{attention_html}</ul>
+
   <footer>Generated {generated_full} &middot; <a href="https://github.com/larboz/Jira-PM-Exploration">source</a></footer>
 </div>
 </body>
@@ -339,11 +357,11 @@ def main():
     features = history[-1]["features"] if history else []
 
     if cycle_num == 0:
-        achieved, in_progress, coming_up, status_key, status_label = [], [], [], "good", "ON TRACK"
+        achieved, in_progress, coming_up, attention, status_key, status_label = [], [], [], [], "good", "ON TRACK"
     else:
-        achieved, in_progress, coming_up, status_key, status_label = gather(client, cycle_num, features)
+        achieved, in_progress, coming_up, attention, status_key, status_label = gather(client, cycle_num, features)
 
-    html = render(achieved, in_progress, coming_up, status_key, status_label, cycle_num)
+    html = render(achieved, in_progress, coming_up, attention, status_key, status_label, cycle_num)
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         f.write(html)
