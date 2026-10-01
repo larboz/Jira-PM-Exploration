@@ -54,7 +54,9 @@ jobs:
         run: |
           git config user.name "jira-sim-bot"
           git config user.email "actions@github.com"
-          git add dashboard_debug.log weekly_debug.log
+          for f in dashboard_debug.log weekly_debug.log; do
+            [ -f "$f" ] && git add "$f"
+          done
           git commit -m "debug: build failure logs" || true
           git push
           exit 1
