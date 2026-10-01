@@ -1,0 +1,12 @@
+{
+  "decisions": [
+    {
+      "id": "d1",
+      "question": "If a feature won't make the cycle deadline, do we cut scope or push the date?",
+      "raised": "2026-09-28",
+      "status": "open",
+      "decision": null,
+      "decided_date": null
+    }
+  ]
+}

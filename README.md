@@ -44,11 +44,48 @@ Two more things get generated automatically each cycle:
 
 - A **requirements page in Confluence** (program overview, the teams, this cycle's
   features, the dependency chain) — created once, then updated in place each cycle.
-- A **live status dashboard**, published as a static site via GitHub Pages, showing
-  whether the program looks on track, a **What's blocked** table (ticket, assignee,
-  and a comment explaining why), a **What's behind** table (ticket, assignee, and the
-  due date it missed), and a done / in-progress / next breakdown per team. It links
-  back to the Confluence page.
+- A **live status dashboard**, published as a static site via GitHub Pages. It's split
+  into two pages:
+  - `index.html` — the **daily tracker**: a "status by team" chart and a program-wide
+    burndown chart, then five tables — **What's blocked**, **What's behind**,
+    **High risks**, **Issues**, and **Unlogged decisions** (see below for how each is
+    computed) — plus a done / in-progress / next breakdown per team. Links to the
+    Confluence page and to the weekly status page.
+  - `weekly.html` — a rolling 7-day **weekly status**: What we completed this week /
+    What's in progress / What's coming next, condensed to a handful of lines per
+    section across the whole program (not broken out by team). Rebuilt daily so it's
+    always current, even though it's framed as "this week."
+
+### How the daily tracker's tables are computed
+
+- **What's blocked** / **What's behind** — straight from ticket state: a story is
+  blocked if its dependency link says so, behind if it's past its due date and not
+  Done.
+- **High risks** — automatic, from ticket data. A story counts as a high risk if
+  either: (a) it's a big story (5+ points) that's also blocked or behind, or (b) it's
+  blocking 2 or more other stories (a chokepoint). The "why it's risky" column says
+  which.
+- **Issues** — automatic: any unblocked, not-done story that hasn't been touched in
+  5+ days (stalled).
+- **Unlogged decisions** — the one thing that *isn't* computed from Jira. A real
+  decision needs a real decision-maker, so this is a small hand-maintained list in
+  `config/decisions.json`. To log a new open question, or close one out, edit that
+  file directly — even via GitHub's web editor, no local setup needed:
+
+  ```json
+  {
+    "id": "d2",
+    "question": "Do we cut scope or push the date?",
+    "raised": "2026-09-28",
+    "status": "open",
+    "decision": null,
+    "decided_date": null
+  }
+  ```
+
+  The dashboard only ever shows entries with `"status": "open"`. Once a decision is
+  made, set `"status": "closed"` (and fill in `decision`/`decided_date` for your own
+  record) and it drops off the dashboard on the next run.
 
 Every story gets story points (1/2/3/5/8), a due date, and a real assignee, drawn
 from a small fictional roster (`config/people.json`). Jira's assignee field only
@@ -68,15 +105,20 @@ jira_sim/
   generate_backlog.py     builds one cycle's worth of epics/stories/links/sprints
   daily_update.py         advances/blocks tickets (posts a comment when newly blocked), detects cycle completion
   build_requirements_doc.py  creates/updates the Confluence requirements page
-  build_dashboard.py      renders docs/index.html, the status dashboard
+  build_dashboard.py      renders docs/index.html, the daily tracker (blocked/behind/risks/issues/decisions + charts)
+  build_weekly_status.py  renders docs/weekly.html, the rolling weekly status page
+  charts.py               inline-SVG chart helpers (status-by-team bar, burndown) used by build_dashboard.py
+  decisions.py            loads the open entries from config/decisions.json
   state.py                reads/writes state/cycle_state.json
 config/
   teams.json              company/teams config
   people.json             the fictional roster (name + email alias per person)
+  decisions.json          hand-maintained decision log -- edit this yourself to log/close a decision
 state/
   cycle_state.json        which cycle we're on, Confluence page id (committed by the workflow)
 docs/
-  index.html              the published dashboard (GitHub Pages serves this)
+  index.html              the published daily tracker (GitHub Pages serves this)
+  weekly.html             the published weekly status page
 .github/workflows/
   daily-update.yml        the daily cron job
 ```
