@@ -8,60 +8,87 @@
   :root {
     color-scheme: light;
     --surface: #fcfcfb; --page: #f9f9f7; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
-    --border: rgba(11,11,11,0.10); --grid: #e1e0d9;
+    --border: rgba(11,11,11,0.10); --grid: #e1e0d9; --label-bg: #eceae4;
+    --banner: #16365c; --banner-ink: #ffffff;
+    --good: #0ca30c; --warning: #fab219; --critical: #d03b3b; --na: #c7c5bd;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       color-scheme: dark;
       --surface: #1a1a19; --page: #0d0d0d; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
-      --border: rgba(255,255,255,0.10); --grid: #2c2c2a;
+      --border: rgba(255,255,255,0.10); --grid: #2c2c2a; --label-bg: #232320;
+      --banner: #0d2742; --banner-ink: #ffffff;
+      --na: #3a3a37;
     }
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; padding: 24px 16px 64px; background: var(--page); color: var(--ink);
+    margin: 0; padding: 0 0 56px; background: var(--page); color: var(--ink);
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   }
-  .wrap { max-width: 720px; margin: 0 auto; }
-  header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
-  h1 { font-size: 1.4rem; margin: 0; }
-  .muted { color: var(--muted); font-weight: normal; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+  .banner { background: var(--banner); color: var(--banner-ink); padding: 22px 16px; text-align: center; margin-bottom: 20px; }
+  .banner h1 { margin: 0; font-size: 1.6rem; letter-spacing: .01em; }
+  .banner .sub { margin: 6px 0 0; font-size: 0.9rem; opacity: 0.85; }
+  .top-links { display: flex; justify-content: flex-end; gap: 14px; font-size: 0.9rem; margin-bottom: 14px; }
   a { color: var(--ink); }
-  .subtitle { color: var(--muted); font-size: 0.9rem; margin: 0 0 20px; }
+  table.meta { width: 100%; border-collapse: collapse; margin-bottom: 28px; border: 1px solid var(--border); }
+  table.meta th, table.meta td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; vertical-align: middle; font-size: 0.92rem; }
+  table.meta th { background: var(--label-bg); font-weight: 700; width: 180px; white-space: nowrap; }
+  .rag-row td { padding: 10px; }
+  .rag-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .rag-box { padding: 14px 8px; text-align: center; }
+  .rag-box .rag-label { font-weight: 700; font-size: 0.85rem; color: #1a1a1a; }
+  .rag-good { background: var(--good); }
+  .rag-warning { background: var(--warning); }
+  .rag-critical { background: var(--critical); color: #fff; }
+  .rag-critical .rag-label { color: #fff; }
+  .rag-na { background: var(--na); }
+  .rag-na .rag-label { color: var(--ink-2); font-weight: 600; }
+  .rag-names { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-bottom: 2px; }
+  .rag-names span { text-align: center; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); }
   h2 { font-size: 1.05rem; border-bottom: 1px solid var(--grid); padding-bottom: 6px; margin-top: 30px; }
-  ul { padding-left: 20px; }
-  li { margin-bottom: 8px; line-height: 1.4; }
-  .empty { color: var(--muted); font-style: italic; }
+  ul { padding-left: 20px; margin: 10px 0; list-style: none; }
+  li { margin-bottom: 10px; line-height: 1.45; padding-left: 20px; position: relative; }
+  li::before { content: "\2022"; position: absolute; left: 4px; color: var(--muted); }
+  li.good::before { content: "\2713"; color: var(--good); }
+  li.warn::before { content: "\26A0"; color: var(--warning); }
+  li.empty { font-style: italic; color: var(--muted); }
+  li.empty::before { content: ""; }
   footer { margin-top: 40px; color: var(--muted); font-size: 0.82rem; }
 </style>
 </head>
 <body>
+<div class="banner">
+  <h1>Fieldstone Commerce &mdash; Weekly Status</h1>
+  <p class="sub">Rolling 7-day view, across the whole program</p>
+</div>
 <div class="wrap">
-  <header>
-    <h1>Fieldstone Commerce <span class="muted">Weekly Status</span></h1>
-    <div><a href="index.html">Daily tracker &#8594;</a></div>
-  </header>
-  <p class="subtitle">Rolling 7-day view, across the whole program &middot; updated 2026-10-01 16:29 UTC</p>
+  <div class="top-links"><a href="index.html">Daily tracker &#8594;</a></div>
 
-  <h2>What we completed this week</h2>
-  <ul><li><strong>Subscription Boxes</strong> &mdash; 11 stories completed this week (API, Backend, Front End, Infrastructure, UI/UX)</li>
-<li><strong>Wishlist Sync</strong> &mdash; 14 stories completed this week (API, Backend, Front End, Infrastructure, UI/UX)</li>
-<li><strong>Checkout Redesign</strong> &mdash; 11 stories completed this week (API, Backend, Front End, Infrastructure, UI/UX)</li>
-<li><strong>Multi-Currency Support</strong> &mdash; 15 stories completed this week (API, Backend, Front End, Infrastructure, UI/UX)</li></ul>
+  <table class="meta">
+    <tr><th>Project Name</th><td>Fieldstone Commerce (Cycle 1)</td></tr>
+    <tr><th>Date</th><td>2026-10-01</td></tr>
+    <tr><th>Created By</th><td>Auto-generated &middot; updated 2026-10-01 17:28 UTC</td></tr>
+    <tr class="rag-row"><th>Status RAG</th><td>
+      <div class="rag-names"><span>Time</span><span>Quality</span><span>Budget</span></div>
+      <div class="rag-group"><div class="rag-box rag-good"><div class="rag-label">ON TRACK</div></div><div class="rag-box rag-na"><div class="rag-label">Not tracked</div></div><div class="rag-box rag-na"><div class="rag-label">Not tracked</div></div></div>
+    </td></tr>
+  </table>
 
-  <h2>What's in progress</h2>
-  <ul><li><strong>Wishlist Sync</strong> &mdash; 3 stories in progress (Front End, UI/UX)</li>
-<li><strong>Multi-Currency Support</strong> &mdash; 3 stories in progress (API, Front End, UI/UX)</li>
-<li><strong>Subscription Boxes</strong> &mdash; 5 stories in progress (API, Front End, Infrastructure)</li>
-<li><strong>Checkout Redesign</strong> &mdash; 4 stories in progress (Backend, Front End, Infrastructure)</li></ul>
+  <h2>What We Achieved This Week</h2>
+  <ul><li>Steady progress across the program &mdash; 65 items wrapped up this week.</li></ul>
 
-  <h2>What's coming next</h2>
-  <ul><li><strong>Subscription Boxes</strong> &mdash; 2 stories queued and ready to start (Infrastructure, UI/UX)</li>
-<li><strong>Wishlist Sync</strong> &mdash; 1 story queued and ready to start (Infrastructure)</li>
-<li><strong>Checkout Redesign</strong> &mdash; 2 stories queued and ready to start (Backend, Front End)</li>
-<li><strong>Multi-Currency Support</strong> &mdash; 1 story queued and ready to start (Backend)</li></ul>
+  <h2>What's In Progress</h2>
+  <ul><li><strong>Checkout Redesign</strong> is in active development.</li>
+<li><strong>Multi-Currency Support</strong> is in active development.</li>
+<li><strong>Subscription Boxes</strong> is in active development.</li>
+<li><strong>Wishlist Sync</strong> is in active development.</li></ul>
 
-  <footer>Generated 2026-10-01 16:29 UTC &middot; <a href="https://github.com/larboz/Jira-PM-Exploration">source</a></footer>
+  <h2>What's Coming Up</h2>
+  <ul><li>The next phase of <strong>Subscription Boxes</strong> &mdash; Infrastructure &mdash; is ready to start.</li></ul>
+
+  <footer>Generated 2026-10-01 17:28 UTC &middot; <a href="https://github.com/larboz/Jira-PM-Exploration">source</a></footer>
 </div>
 </body>
 </html>
