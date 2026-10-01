@@ -12,9 +12,10 @@ from jira_sim.blocking import find_blocker
 from jira_sim.charts import burndown_chart, team_status_chart
 from jira_sim.decisions import load_open_decisions
 from jira_sim.jira_client import JiraClient
+from jira_sim.milestones import milestone_status, milestones_for_cycle
 from jira_sim.state import load_state
 from jira_sim.status import QUARTER_END, compute_status
-from jira_sim.templates import TEAM_ORDER
+from jira_sim.templates import FEATURE_POOL, TEAM_ORDER
 
 STALE_DAYS = 5  # no activity in this many days -> flagged as an "Issue"
 RISK_POINTS_THRESHOLD = 5  # story points at/above this count as "big" for risk purposes
@@ -250,6 +251,46 @@ def gather(client, cycle_label):
     return by_team, blocked_rows, behind_rows, risk_rows, issue_rows, burndown
 
 
+def _feature_for(summary):
+    for f in FEATURE_POOL:
+        if f in summary:
+            return f
+    return None
+
+
+def _feature_progress(by_team):
+    """feature -> {done, remaining} across the whole cycle, so milestone
+    status (upcoming vs. missed vs. achieved) can be computed per feature."""
+    progress = {}
+    for bucket in by_team.values():
+        for status_key in ("done", "in_progress", "todo"):
+            for entry in bucket[status_key]:
+                feature = _feature_for(entry["summary"])
+                if not feature:
+                    continue
+                p = progress.setdefault(feature, {"done": 0, "remaining": 0})
+                if status_key == "done":
+                    p["done"] += 1
+                else:
+                    p["remaining"] += 1
+    return progress
+
+
+def _upcoming_milestone_rows(features, by_team):
+    """Milestones not yet wrapped up -- upcoming or already past their
+    target -- sorted soonest-first. Achieved and not-in-cycle milestones
+    aren't news, so they're left off."""
+    progress = _feature_progress(by_team)
+    rows = []
+    for m in milestones_for_cycle(features):
+        status = milestone_status(m, progress.get(m["feature"]))
+        if status not in ("upcoming", "missed"):
+            continue
+        rows.append({**m, "status": status})
+    rows.sort(key=lambda m: m["target_date"])
+    return rows
+
+
 def _points_sum(entries):
     return sum(e.get("points") or 0 for e in entries)
 
@@ -342,7 +383,17 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
     else:
         decisions_html = '<tr><td colspan="2" class="empty">No open decisions logged.</td></tr>'
 
-    features_html = "".join(f"<li>{_esc(f)}</li>" for f in features)
+    milestone_rows = _upcoming_milestone_rows(features, by_team)
+    if milestone_rows:
+        milestone_html = "\n".join(
+            f'<tr><td>{_esc(m["name"])}</td><td>{_esc(m["feature"])}</td>'
+            f'<td>{m["target_date"]}</td>'
+            f'<td><span class="ms-tag ms-{"warning" if m["status"] == "missed" else "good"}">'
+            f'{"Behind schedule" if m["status"] == "missed" else "Upcoming"}</span></td></tr>'
+            for m in milestone_rows
+        )
+    else:
+        milestone_html = '<tr><td colspan="4" class="empty">No upcoming milestones this cycle.</td></tr>'
     generated = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     today_str = date.today().isoformat()
     req_link = (
@@ -409,6 +460,9 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
   .key {{ font-family: ui-monospace, monospace; color: var(--ink-2); font-size: 0.82rem; white-space: nowrap; }}
   .pts {{ font-size: 0.75rem; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; margin-left: 2px; }}
   .empty {{ color: var(--muted); font-style: italic; }}
+  .ms-tag {{ display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.78rem; font-weight: 600; }}
+  .ms-tag.ms-good {{ background: rgba(12,163,12,0.15); color: var(--good); }}
+  .ms-tag.ms-warning {{ background: rgba(250,178,25,0.18); color: var(--warning); }}
   .charts-row {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 12px; }}
   .chart-wrap {{ background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }}
   .chart-svg {{ width: 100%; height: auto; display: block; }}
@@ -497,8 +551,11 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
     <tbody>{decisions_html}</tbody>
   </table>
 
-  <h2>This cycle's features</h2>
-  <ul>{features_html}</ul>
+  <h2>Upcoming milestones</h2>
+  <table>
+    <thead><tr><th>Milestone</th><th>Feature</th><th>Target date</th><th>Status</th></tr></thead>
+    <tbody>{milestone_html}</tbody>
+  </table>
 
   <h2>By team</h2>
   {"".join(team_sections)}
