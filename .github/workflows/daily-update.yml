@@ -31,38 +31,20 @@ jobs:
         run: python -m jira_sim.daily_update
 
       - name: Rebuild status dashboard
-        id: dashboard
-        continue-on-error: true
         env:
           JIRA_SITE: ${{ secrets.JIRA_SITE }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-        run: python -m jira_sim.build_dashboard > dashboard_debug.log 2>&1
+        run: python -m jira_sim.build_dashboard
 
       - name: Rebuild weekly status
-        id: weekly
-        if: steps.dashboard.outcome == 'success'
-        continue-on-error: true
         env:
           JIRA_SITE: ${{ secrets.JIRA_SITE }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-        run: python -m jira_sim.build_weekly_status > weekly_debug.log 2>&1
-
-      - name: Commit debug logs if anything failed
-        if: steps.dashboard.outcome == 'failure' || steps.weekly.outcome == 'failure'
-        run: |
-          git config user.name "jira-sim-bot"
-          git config user.email "actions@github.com"
-          for f in dashboard_debug.log weekly_debug.log; do
-            [ -f "$f" ] && git add "$f"
-          done
-          git commit -m "debug: build failure logs" || true
-          git push
-          exit 1
+        run: python -m jira_sim.build_weekly_status
 
       - name: Commit updated state and dashboard
-        if: steps.dashboard.outcome == 'success' && steps.weekly.outcome == 'success'
         run: |
           git config user.name "jira-sim-bot"
           git config user.email "actions@github.com"

@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/home/runner/work/Jira-PM-Exploration/Jira-PM-Exploration/jira_sim/build_dashboard.py", line 16, in <module>
-    from jira_sim.status import QUARTER_END, compute_status
-ModuleNotFoundError: No module named 'jira_sim.status'
