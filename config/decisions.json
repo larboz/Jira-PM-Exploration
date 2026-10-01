@@ -10,7 +10,7 @@
     },
     {
       "id": "d2",
-      "question": "Checkout Redesign's hi-fi mockups (UXD-13) are overdue after a late payments-team change -- the Oct 15 target is now at risk. Push the date, cut scope, or pull in help to catch up?",
+      "question": "Checkout Redesign's backend code review (BE-10) is paused -- the hi-fi mockups were reworked for a late payments-team fee-disclosure requirement, and we're holding review until the backend is confirmed to match. The Oct 15 target is now at risk. Push the date, cut scope, or pull in help to catch up?",
       "raised": "2026-10-01",
       "status": "open",
       "decision": null,

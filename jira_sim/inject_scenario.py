@@ -45,18 +45,21 @@ def main():
     client = JiraClient()
 
     # Scenario 1: Checkout Redesign slips behind its Oct 15 milestone.
-    # UXD-13 (Hi-fi mockups) is the next open step in that feature's design
-    # work and nothing downstream can finish without it.
+    # UXD-13 (the hi-fi mockup rework) already shipped by the time this was
+    # re-run, so the live blocker is now BE-10 -- backend code review is
+    # paused until the reworked checkout layout (driven by a late
+    # payments-team fee-disclosure requirement) is confirmed to match.
     push_ticket_overdue(
         client,
-        "UXD-13",
+        "BE-10",
         days_overdue=6,
         reason=(
-            "Paused: the payments team asked for a late change to the checkout layout "
-            "(new fee-disclosure requirement) and we're reworking the hi-fi mockups to "
-            "match before this can move to review. Expect this to land about a week "
-            "later than planned, which pushes the whole Checkout Redesign timeline past "
-            "the Oct 15 target."
+            "Paused: holding backend code review until the reworked checkout layout is "
+            "confirmed to match the payments team's new fee-disclosure requirement -- the "
+            "hi-fi mockups were updated for it, and we don't want to sign off on backend "
+            "changes that might need another pass. Expect this to land about a week later "
+            "than planned, which pushes the whole Checkout Redesign timeline past the "
+            "Oct 15 target."
         ),
     )
 
