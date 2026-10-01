@@ -2,8 +2,9 @@ name: Daily Jira Update
 
 on:
   schedule:
-    # 13:00 UTC = 8am Central (7am during standard time)
-    - cron: "0 13 * * *"
+    # 12:00 UTC = 6am Central Standard Time (7am during Central Daylight Time,
+    # since GitHub Actions cron runs on a fixed UTC time and doesn't shift for DST)
+    - cron: "0 12 * * *"
   workflow_dispatch: {}
 
 permissions:
