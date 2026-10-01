@@ -28,45 +28,6 @@ TEAM_NAMES = {
     "API": "API",
     "FE": "Front End",
 }
-# Categorical slots 1-5 from the dataviz reference palette, fixed order per team.
-TEAM_COLOR_LIGHT = {
-    "UXD": "#2a78d6",
-    "INF": "#eb6834",
-    "BE": "#1baf7a",
-    "API": "#eda100",
-    "FE": "#e87ba4",
-}
-TEAM_COLOR_DARK = {
-    "UXD": "#3987e5",
-    "INF": "#d95926",
-    "BE": "#199e70",
-    "API": "#c98500",
-    "FE": "#d55181",
-}
-# Layman's terms + "so what" per team, shown on the dashboard so a non-technical
-# exec reading it knows why a given team's slip actually matters.
-TEAM_BLURBS = {
-    "UXD": {
-        "what": "Designs what shoppers actually see: page layouts, product imagery, the overall look and feel.",
-        "so_what": "Every other team is building against these designs. If UX slips, nothing customer-facing can start.",
-    },
-    "INF": {
-        "what": "Builds the AWS plumbing underneath everything: servers, databases, autoscaling.",
-        "so_what": "Nothing can safely go live without this. A finished feature with nowhere reliable to run isn't shippable.",
-    },
-    "BE": {
-        "what": "Builds the core logic and data behind the scenes: orders, inventory, pricing rules.",
-        "so_what": "This is the real engine. If it slips, the API and front end have nothing real to connect to.",
-    },
-    "API": {
-        "what": "Connects the storefront to the backend, and opens the same data up to outside partners.",
-        "so_what": "If this slips, the front end has nothing to call, and partner integrations stall too.",
-    },
-    "FE": {
-        "what": "Builds the actual website: what a shopper clicks, types, and buys through.",
-        "so_what": "This is the last mile. Everything upstream can be finished and it still won't reach a customer.",
-    },
-}
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "index.html")
 JIRA_SITE = os.environ.get("JIRA_SITE", "").rstrip("/")
 
@@ -283,28 +244,19 @@ def _upcoming_milestone_rows(features, by_team):
     progress = _feature_progress(by_team)
     rows = []
     for m in milestones_for_cycle(features):
-        status = milestone_status(m, progress.get(m["feature"]))
+        p = progress.get(m["feature"])
+        status = milestone_status(m, p)
         if status not in ("upcoming", "missed"):
             continue
-        rows.append({**m, "status": status})
+        total = (p["done"] + p["remaining"]) if p else 0
+        pct = round(100 * p["done"] / total) if total else 0
+        rows.append({**m, "status": status, "pct": pct})
     rows.sort(key=lambda m: m["target_date"])
     return rows
 
 
 def _points_sum(entries):
     return sum(e.get("points") or 0 for e in entries)
-
-
-def _story_list(entries, empty_text):
-    if not entries:
-        return f'<li class="empty">{empty_text}</li>'
-    items = []
-    for e in entries:
-        pts = f' <span class="pts">{e["points"]}pt</span>' if e.get("points") else ""
-        items.append(
-            f'<li><a href="{_issue_url(e["key"])}"><span class="key">{e["key"]}</span></a> {_esc(e["summary"])}{pts}</li>'
-        )
-    return "\n".join(items)
 
 
 def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, issue_rows, decisions, burndown, requirements_url, latest_archive_date=None):
@@ -320,21 +272,6 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
 
     flagged = len(blocked_rows) + len(behind_rows)
     status_key, status_label = compute_status(total, flagged, days_left)
-
-    team_sections = []
-    for key in TEAM_ORDER:
-        b = by_team.get(key, {"done": [], "in_progress": [], "todo": []})
-        blurb = TEAM_BLURBS[key]
-        team_sections.append(f"""
-      <section class="team-card" style="--team-color:{TEAM_COLOR_LIGHT[key]};--team-color-dark:{TEAM_COLOR_DARK[key]}">
-        <h3>{TEAM_NAMES[key]} <span class="muted">{key}</span></h3>
-        <p class="team-blurb">{blurb['what']} <strong>So what:</strong> {blurb['so_what']}</p>
-        <div class="team-cols">
-          <div><h4>Done ({len(b['done'])})</h4><ul>{_story_list(b['done'], 'Nothing done yet')}</ul></div>
-          <div><h4>In progress ({len(b['in_progress'])})</h4><ul>{_story_list(b['in_progress'], 'Nothing in progress')}</ul></div>
-          <div><h4>Next ({len(b['todo'])})</h4><ul>{_story_list(b['todo'], 'Backlog clear')}</ul></div>
-        </div>
-      </section>""")
 
     if blocked_rows:
         blocked_html = "\n".join(
@@ -387,13 +324,13 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
     if milestone_rows:
         milestone_html = "\n".join(
             f'<tr><td>{_esc(m["name"])}</td><td>{_esc(m["feature"])}</td>'
-            f'<td>{m["target_date"]}</td>'
+            f'<td>{m["target_date"]}</td><td>{m["pct"]}%</td>'
             f'<td><span class="ms-tag ms-{"warning" if m["status"] == "missed" else "good"}">'
             f'{"Behind schedule" if m["status"] == "missed" else "Upcoming"}</span></td></tr>'
             for m in milestone_rows
         )
     else:
-        milestone_html = '<tr><td colspan="4" class="empty">No upcoming milestones this cycle.</td></tr>'
+        milestone_html = '<tr><td colspan="5" class="empty">No upcoming milestones this cycle.</td></tr>'
     generated = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     today_str = date.today().isoformat()
     req_link = (
@@ -474,14 +411,6 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
   .chart-legend .swatch {{ width: 12px; height: 12px; border-radius: 3px; display: inline-block; }}
   .chart-legend .swatch.dash {{ width: 14px; height: 0; border-top: 2px dashed; border-radius: 0; background: none; }}
   .chart-caption {{ margin: 8px 0 0; font-size: 0.85rem; color: var(--ink-2); }}
-  .team-card {{ background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--team-color); border-radius: 8px; padding: 14px 18px; margin-top: 14px; }}
-  @media (prefers-color-scheme: dark) {{ .team-card {{ border-left-color: var(--team-color-dark); }} }}
-  .team-card h3 {{ margin: 0 0 10px; }}
-  .team-blurb {{ margin: 0 0 12px; font-size: 0.88rem; color: var(--ink-2); }}
-  .team-cols {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }}
-  .team-cols h4 {{ margin: 0 0 6px; font-size: 0.8rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: .03em; }}
-  .team-cols ul {{ margin: 0; padding-left: 18px; font-size: 0.88rem; }}
-  .team-cols li {{ margin-bottom: 4px; }}
   footer {{ margin-top: 40px; color: var(--muted); font-size: 0.82rem; }}
 </style>
 </head>
@@ -553,12 +482,9 @@ def render(cycle_num, features, by_team, blocked_rows, behind_rows, risk_rows, i
 
   <h2>Upcoming milestones</h2>
   <table>
-    <thead><tr><th>Milestone</th><th>Feature</th><th>Target date</th><th>Status</th></tr></thead>
+    <thead><tr><th>Milestone</th><th>Feature</th><th>Target date</th><th>% Complete</th><th>Status</th></tr></thead>
     <tbody>{milestone_html}</tbody>
   </table>
-
-  <h2>By team</h2>
-  {"".join(team_sections)}
 
   <footer>Cycle {cycle_num} &middot; generated {generated} &middot; <a href="https://github.com/larboz/Jira-PM-Exploration">source</a></footer>
 </div>
