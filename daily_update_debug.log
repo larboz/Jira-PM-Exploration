@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/Jira-PM-Exploration/Jira-PM-Exploration/jira_sim/daily_update.py", line 131, in <module>
+    main()
+  File "/home/runner/work/Jira-PM-Exploration/Jira-PM-Exploration/jira_sim/daily_update.py", line 122, in main
+    result = generate_cycle(client, next_cycle)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Jira-PM-Exploration/Jira-PM-Exploration/jira_sim/generate_backlog.py", line 63, in generate_cycle
+    sprint_ids = start_new_sprints(client, cycle_num)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Jira-PM-Exploration/Jira-PM-Exploration/jira_sim/generate_backlog.py", line 49, in start_new_sprints
+    board_id = client.get_board_id(team)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Jira-PM-Exploration/Jira-PM-Exploration/jira_sim/jira_client.py", line 187, in get_board_id
+    data = self.agile_get(f"board?projectKeyOrId={project_key}")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/Jira-PM-Exploration/Jira-PM-Exploration/jira_sim/jira_client.py", line 65, in agile_get
+    r.raise_for_status()
+  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: https://larboz13.atlassian.net/rest/agile/1.0/board?projectKeyOrId=UXD
+Cycle 1 daily pass: {'open_total': 0, 'advanced': 0, 'blocked': 0, 'newly_blocked': 0, 'unblocked_this_pass': 0}
