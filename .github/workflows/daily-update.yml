@@ -23,24 +23,12 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Run daily update
-        id: daily
-        continue-on-error: true
         env:
           JIRA_SITE: ${{ secrets.JIRA_SITE }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           CONFLUENCE_SPACE_KEY: ${{ secrets.CONFLUENCE_SPACE_KEY }}
-        run: python -m jira_sim.daily_update > daily_update_debug.log 2>&1
-
-      - name: Commit debug log if daily update failed
-        if: steps.daily.outcome == 'failure'
-        run: |
-          git config user.name "jira-sim-bot"
-          git config user.email "actions@github.com"
-          [ -f daily_update_debug.log ] && git add daily_update_debug.log
-          git commit -m "debug: daily update failure log" || true
-          git push
-          exit 1
+        run: python -m jira_sim.daily_update
 
       - name: Rebuild status dashboard
         env:
