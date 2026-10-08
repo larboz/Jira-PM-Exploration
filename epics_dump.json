@@ -1,0 +1,102 @@
+[
+  {
+    "key": "API-1",
+    "project": "API",
+    "summary": "Multi-Currency Support \u2013 API Layer"
+  },
+  {
+    "key": "API-6",
+    "project": "API",
+    "summary": "Checkout Redesign \u2013 API Layer"
+  },
+  {
+    "key": "API-11",
+    "project": "API",
+    "summary": "Wishlist Sync \u2013 API Layer"
+  },
+  {
+    "key": "API-16",
+    "project": "API",
+    "summary": "Subscription Boxes \u2013 API Layer"
+  },
+  {
+    "key": "BE-1",
+    "project": "BE",
+    "summary": "Multi-Currency Support \u2013 Backend Services"
+  },
+  {
+    "key": "BE-6",
+    "project": "BE",
+    "summary": "Checkout Redesign \u2013 Backend Services"
+  },
+  {
+    "key": "BE-11",
+    "project": "BE",
+    "summary": "Wishlist Sync \u2013 Backend Services"
+  },
+  {
+    "key": "BE-16",
+    "project": "BE",
+    "summary": "Subscription Boxes \u2013 Backend Services"
+  },
+  {
+    "key": "FE-1",
+    "project": "FE",
+    "summary": "Multi-Currency Support \u2013 Front End Build"
+  },
+  {
+    "key": "FE-6",
+    "project": "FE",
+    "summary": "Checkout Redesign \u2013 Front End Build"
+  },
+  {
+    "key": "FE-11",
+    "project": "FE",
+    "summary": "Wishlist Sync \u2013 Front End Build"
+  },
+  {
+    "key": "FE-16",
+    "project": "FE",
+    "summary": "Subscription Boxes \u2013 Front End Build"
+  },
+  {
+    "key": "INF-1",
+    "project": "INF",
+    "summary": "Multi-Currency Support \u2013 Infrastructure Readiness"
+  },
+  {
+    "key": "INF-5",
+    "project": "INF",
+    "summary": "Checkout Redesign \u2013 Infrastructure Readiness"
+  },
+  {
+    "key": "INF-9",
+    "project": "INF",
+    "summary": "Wishlist Sync \u2013 Infrastructure Readiness"
+  },
+  {
+    "key": "INF-13",
+    "project": "INF",
+    "summary": "Subscription Boxes \u2013 Infrastructure Readiness"
+  },
+  {
+    "key": "UXD-5",
+    "project": "UXD",
+    "summary": "Multi-Currency Support \u2013 UX Design"
+  },
+  {
+    "key": "UXD-10",
+    "project": "UXD",
+    "summary": "Checkout Redesign \u2013 UX Design"
+  },
+  {
+    "key": "UXD-15",
+    "project": "UXD",
+    "summary": "Wishlist Sync \u2013 UX Design"
+  },
+  {
+    "key": "UXD-20",
+    "project": "UXD",
+    "summary": "Subscription Boxes \u2013 UX Design"
+  }
+]
