@@ -1,11 +1,33 @@
 {
-  "current_cycle": 1,
+  "current_cycle": 2,
   "confluence_page_id": "425986",
   "confluence_page_url": "https://larboz13.atlassian.net/wiki/pages/viewpage.action?pageId=425986",
   "history": [
     {
       "cycle": 1,
-      "features": ["Checkout Redesign", "Multi-Currency Support", "Subscription Boxes", "Wishlist Sync"]
+      "features": [
+        "Checkout Redesign",
+        "Multi-Currency Support",
+        "Subscription Boxes",
+        "Wishlist Sync"
+      ]
+    },
+    {
+      "cycle": 2,
+      "features": [
+        "Guest Checkout",
+        "Order Tracking Timeline",
+        "Wishlist Sync",
+        "Live Inventory Alerts"
+      ],
+      "issues_created": 96,
+      "sprint_ids": {
+        "UXD": 40,
+        "INF": 41,
+        "BE": 42,
+        "API": 43,
+        "FE": 44
+      }
     }
   ]
 }
