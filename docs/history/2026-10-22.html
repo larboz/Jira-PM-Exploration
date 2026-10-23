@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="dashboard-generated-date" content="2026-10-22">
+<title>Fieldstone Commerce - Program Status</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb; --page: #f9f9f7; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --border: rgba(11,11,11,0.10); --grid: #e1e0d9;
+    --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+    --stage-todo: #86b6ef; --stage-progress: #3987e5; --stage-done: #1c5cab;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface: #1a1a19; --page: #0d0d0d; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+      --border: rgba(255,255,255,0.10); --grid: #2c2c2a;
+      --stage-todo: #6da7ec; --stage-progress: #2a78d6; --stage-done: #184f95;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 64px; background: var(--page); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 20px; }
+  .header-links { display: flex; gap: 14px; }
+  .history-nav { display: flex; justify-content: space-between; gap: 12px; margin: -10px 0 18px; font-size: 0.85rem; }
+  .history-nav a { color: var(--ink-2); }
+  h1 { font-size: 1.4rem; margin: 0; }
+  .muted { color: var(--muted); font-weight: normal; }
+  a { color: var(--ink); }
+  .status-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); }
+  .badge .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .badge.good .dot { background: var(--good); } .badge.warning .dot { background: var(--warning); } .badge.critical .dot { background: var(--critical); }
+  .stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .tile .value { font-size: 1.6rem; font-weight: 700; }
+  .tile .label { color: var(--ink-2); font-size: 0.85rem; }
+  h2 { font-size: 1.1rem; border-bottom: 1px solid var(--grid); padding-bottom: 6px; margin-top: 32px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--grid); font-size: 0.9rem; vertical-align: top; }
+  th { color: var(--ink-2); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .03em; }
+  .key { font-family: ui-monospace, monospace; color: var(--ink-2); font-size: 0.82rem; white-space: nowrap; }
+  .pts { font-size: 0.75rem; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; margin-left: 2px; }
+  .empty { color: var(--muted); font-style: italic; }
+  .ms-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.78rem; font-weight: 600; }
+  .ms-tag.ms-good { background: rgba(12,163,12,0.15); color: var(--good); }
+  .ms-tag.ms-warning { background: rgba(250,178,25,0.18); color: var(--warning); }
+  .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 12px; }
+  .chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .chart-svg { width: 100%; height: auto; display: block; }
+  .chart-label { font-size: 11px; fill: var(--ink-2); }
+  .chart-value { font-size: 11px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .chart-axis { stroke: var(--grid); stroke-width: 1; }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 0.82rem; color: var(--ink-2); }
+  .chart-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+  .chart-legend .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .chart-legend .swatch.dash { width: 14px; height: 0; border-top: 2px dashed; border-radius: 0; background: none; }
+  .chart-caption { margin: 8px 0 0; font-size: 0.85rem; color: var(--ink-2); }
+  footer { margin-top: 40px; color: var(--muted); font-size: 0.82rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Fieldstone Commerce <span class="muted">Program Status</span></h1>
+    <div class="header-links">
+      <a href="history/2026-10-21.html">&larr; Previous day</a>
+      <a href="../weekly.html">Weekly status &#8594;</a>
+      <a href="https://larboz13.atlassian.net/wiki/pages/viewpage.action?pageId=425986">Requirements doc &#8594;</a>
+    </div>
+  </header>
+<!-- HISTORY_NAV_START --><div class="history-nav"><a href="2026-10-21.html">&larr; 2026-10-21</a><a href="../index.html">Today &rarr;</a></div><!-- HISTORY_NAV_END -->
+
+  <div class="status-row">
+    <div class="badge good"><span class="dot"></span>ON TRACK</div>
+    <div class="badge"><strong>34%</strong>&nbsp;of Cycle 2 done</div>
+    <div class="badge"><strong>70</strong>&nbsp;days to 2026-12-31</div>
+  </div>
+
+  <div class="stat-tiles">
+    <div class="tile"><div class="value">76</div><div class="label">Total stories</div></div>
+    <div class="tile"><div class="value">26</div><div class="label">Done</div></div>
+    <div class="tile"><div class="value">21</div><div class="label">In progress</div></div>
+    <div class="tile"><div class="value">29</div><div class="label">Not started</div></div>
+    <div class="tile"><div class="value">116.0/321.0</div><div class="label">Story points done</div></div>
+  </div>
+
+  <div class="charts-row">
+    <div>
+      <h2>Status by team</h2>
+      <div class="chart-wrap"><svg viewBox="0 0 544 180" class="chart-svg" role="img" aria-label="Story status by team"><text x="98" y="22.0" text-anchor="end" class="chart-label">UI/UX</text><rect x="108.0" y="8" width="140.5" height="20" rx="0" fill="var(--stage-done)"><title>UI/UX: 6 done</title></rect><rect x="250.5" y="8" width="116.8" height="20" rx="0" fill="var(--stage-progress)"><title>UI/UX: 5 in progress</title></rect><rect x="369.2" y="8" width="118.8" height="20" rx="4" fill="var(--stage-todo)"><title>UI/UX: 5 not started</title></rect><text x="498" y="22.0" class="chart-value">16</text><text x="98" y="58.0" text-anchor="end" class="chart-label">Infrastructure</text><rect x="108.0" y="44" width="45.5" height="20" rx="0" fill="var(--stage-done)"><title>Infrastructure: 2 done</title></rect><rect x="155.5" y="44" width="93.0" height="20" rx="0" fill="var(--stage-progress)"><title>Infrastructure: 4 in progress</title></rect><rect x="250.5" y="44" width="142.5" height="20" rx="4" fill="var(--stage-todo)"><title>Infrastructure: 6 not started</title></rect><text x="498" y="58.0" class="chart-value">12</text><text x="98" y="94.0" text-anchor="end" class="chart-label">Backend</text><rect x="108.0" y="80" width="69.2" height="20" rx="0" fill="var(--stage-done)"><title>Backend: 3 done</title></rect><rect x="179.2" y="80" width="140.5" height="20" rx="0" fill="var(--stage-progress)"><title>Backend: 6 in progress</title></rect><rect x="321.8" y="80" width="166.2" height="20" rx="4" fill="var(--stage-todo)"><title>Backend: 7 not started</title></rect><text x="498" y="94.0" class="chart-value">16</text><text x="98" y="130.0" text-anchor="end" class="chart-label">API</text><rect x="108.0" y="116" width="140.5" height="20" rx="0" fill="var(--stage-done)"><title>API: 6 done</title></rect><rect x="250.5" y="116" width="93.0" height="20" rx="0" fill="var(--stage-progress)"><title>API: 4 in progress</title></rect><rect x="345.5" y="116" width="142.5" height="20" rx="4" fill="var(--stage-todo)"><title>API: 6 not started</title></rect><text x="498" y="130.0" class="chart-value">16</text><text x="98" y="166.0" text-anchor="end" class="chart-label">Front End</text><rect x="108.0" y="152" width="211.8" height="20" rx="0" fill="var(--stage-done)"><title>Front End: 9 done</title></rect><rect x="321.8" y="152" width="45.5" height="20" rx="0" fill="var(--stage-progress)"><title>Front End: 2 in progress</title></rect><rect x="369.2" y="152" width="118.8" height="20" rx="4" fill="var(--stage-todo)"><title>Front End: 5 not started</title></rect><text x="498" y="166.0" class="chart-value">16</text></svg><div class="chart-legend"><span class="chart-legend-item"><span class="swatch" style="background:var(--stage-done)"></span>Done</span><span class="chart-legend-item"><span class="swatch" style="background:var(--stage-progress)"></span>In progress</span><span class="chart-legend-item"><span class="swatch" style="background:var(--stage-todo)"></span>Not started</span></div></div>
+    </div>
+    <div>
+      <h2>Burndown</h2>
+      <div class="chart-wrap"><svg viewBox="0 0 640 220" class="chart-svg" role="img" aria-label="Burndown: remaining story points over time">
+      <line x1="44" y1="192" x2="628" y2="192" class="chart-axis"/><text x="36" y="196" text-anchor="end" class="chart-label">0</text><text x="36" y="16" text-anchor="end" class="chart-label">321</text>
+      <path d="M 44.0 12.0 L 67.4 19.2 L 90.7 26.4 L 114.1 33.6 L 137.4 40.8 L 160.8 48.0 L 184.2 55.2 L 207.5 62.4 L 230.9 69.6 L 254.2 76.8 L 277.6 84.0 L 301.0 91.2 L 324.3 98.4 L 347.7 105.6 L 371.0 112.8 L 394.4 120.0 L 417.8 127.2 L 441.1 134.4 L 464.5 141.6 L 487.8 148.8 L 511.2 156.0 L 534.6 163.2 L 557.9 170.4 L 581.3 177.6 L 604.6 184.8 L 628.0 192.0" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 4"/>
+      <path d="M 44.0 12.0 L 67.4 12.0 L 90.7 25.5 L 114.1 77.0" fill="none" stroke="var(--good)" stroke-width="2"/>
+      <circle cx="628.0" cy="192.0" r="4" fill="var(--surface)" stroke="var(--muted)" stroke-width="2"><title>Ideal pace: 0 pts remaining on 2026-11-13</title></circle><circle cx="114.1" cy="77.0" r="5" fill="var(--good)" stroke="var(--surface)" stroke-width="2"><title>Actual: 205 pts remaining on 2026-10-22</title></circle>
+      <text x="44" y="214" text-anchor="start" class="chart-label">2026-10-19</text><text x="628" y="214" text-anchor="end" class="chart-label">2026-11-13</text>
+    </svg><div class="chart-legend"><span class="chart-legend-item"><span class="swatch dash" style="border-color:var(--muted)"></span>Ideal pace</span><span class="chart-legend-item"><span class="swatch" style="background:var(--good)"></span>Actual remaining</span></div><p class="chart-caption">205 pts remaining of 321 &middot; target 2026-11-13</p></div>
+    </div>
+  </div>
+
+  <h2>What's blocked (10)</h2>
+  <table>
+    <thead><tr><th>Ticket</th><th>Team</th><th>Assignee</th><th>Why it's blocked</th></tr></thead>
+    <tbody><tr><td><a href="https://larboz13.atlassian.net/browse/UXD-28"><span class="key">UXD-28</span></a></td><td>UI/UX</td><td>Priya</td><td>Blocked by FE-22: "Build UI components for Guest Checkout" is still To Do.</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/INF-30"><span class="key">INF-30</span></a></td><td>Infrastructure</td><td>Priya</td><td>Blocked by BE-37: "Data model design for Live Inventory Alerts" is still To Do.</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/INF-26"><span class="key">INF-26</span></a></td><td>Infrastructure</td><td>Jordan</td><td>Blocked by BE-32: "Data model design for Wishlist Sync" is still To Do.</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/INF-18"><span class="key">INF-18</span></a></td><td>Infrastructure</td><td>Marcus</td><td>Blocked by BE-22: "Data model design for Guest Checkout" is still To Do.</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/BE-38"><span class="key">BE-38</span></a></td><td>Backend</td><td>Jordan</td><td>Blocked by API-37: "Define API contract for Live Inventory Alerts" is still To Do.</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/BE-33"><span class="key">BE-33</span></a></td><td>Backend</td><td>Marcus</td><td>Blocked by API-32: "Define API contract for Wishlist Sync" is still To Do.</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/BE-28"><span class="key">BE-28</span></a></td><td>Backend</td><td>Devon</td><td>Blocked by API-27: "Define API contract for Order Tracking Timeline" is still To Do.</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/API-38"><span class="key">API-38</span></a></td><td>API</td><td>Priya</td><td>Blocked by FE-38: "Wire up API integration for Live Inventory Alerts" is still To Do.</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/API-28"><span class="key">API-28</span></a></td><td>API</td><td>Casey</td><td>Blocked by FE-28: "Wire up API integration for Order Tracking Timeline" is still To Do.</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/API-23"><span class="key">API-23</span></a></td><td>API</td><td>Marcus</td><td>Blocked by FE-23: "Wire up API integration for Guest Checkout" is still To Do.</td></tr></tbody>
+  </table>
+
+  <h2>What's behind (0)</h2>
+  <table>
+    <thead><tr><th>Ticket</th><th>Team</th><th>Assignee</th><th>Due date</th></tr></thead>
+    <tbody><tr><td colspan="4" class="empty">Nothing past its due date right now.</td></tr></tbody>
+  </table>
+
+  <h2>High risks (5)</h2>
+  <table>
+    <thead><tr><th>Ticket</th><th>Team</th><th>Assignee</th><th>Why it's risky</th></tr></thead>
+    <tbody><tr><td><a href="https://larboz13.atlassian.net/browse/BE-38"><span class="key">BE-38</span></a></td><td>Backend</td><td>Jordan</td><td>8.0-pt story, blocked</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/BE-33"><span class="key">BE-33</span></a></td><td>Backend</td><td>Marcus</td><td>8.0-pt story, blocked</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/API-38"><span class="key">API-38</span></a></td><td>API</td><td>Priya</td><td>8.0-pt story, blocked</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/API-28"><span class="key">API-28</span></a></td><td>API</td><td>Casey</td><td>5.0-pt story, blocked</td></tr>
+<tr><td><a href="https://larboz13.atlassian.net/browse/API-23"><span class="key">API-23</span></a></td><td>API</td><td>Marcus</td><td>8.0-pt story, blocked</td></tr></tbody>
+  </table>
+
+  <h2>Issues (0)</h2>
+  <table>
+    <thead><tr><th>Ticket</th><th>Team</th><th>Assignee</th><th>Stalled for</th></tr></thead>
+    <tbody><tr><td colspan="4" class="empty">Nothing stalled right now.</td></tr></tbody>
+  </table>
+
+  <h2>Unlogged decisions (3)</h2>
+  <table>
+    <thead><tr><th>Question</th><th>Raised</th></tr></thead>
+    <tbody><tr><td>If a feature won't make the cycle deadline, do we cut scope or push the date?</td><td>2026-09-28</td></tr>
+<tr><td>Checkout Redesign's backend code review (BE-10) is paused -- the hi-fi mockups were reworked for a late payments-team fee-disclosure requirement, and we're holding review until the backend is confirmed to match. The Oct 15 target is now at risk. Push the date, cut scope, or pull in help to catch up?</td><td>2026-10-01</td></tr>
+<tr><td>Subscription Boxes (Dec 15 target) still has open work in every team, and the remaining runway crosses Thanksgiving and the December holidays when capacity typically drops. Pull the target in now, add resourcing, or accept the risk and monitor?</td><td>2026-10-01</td></tr></tbody>
+  </table>
+
+  <h2>Upcoming milestones</h2>
+  <table>
+    <thead><tr><th>Milestone</th><th>Feature</th><th>Target date</th><th>% Complete</th><th>Status</th></tr></thead>
+    <tbody><tr><td>Guest Checkout launch</td><td>Guest Checkout</td><td>2026-10-22</td><td>26%</td><td><span class="ms-tag ms-good">Upcoming</span></td></tr>
+<tr><td>Order Tracking Timeline launch</td><td>Order Tracking Timeline</td><td>2026-10-29</td><td>58%</td><td><span class="ms-tag ms-good">Upcoming</span></td></tr>
+<tr><td>Wishlist Sync launch</td><td>Wishlist Sync</td><td>2026-11-12</td><td>26%</td><td><span class="ms-tag ms-good">Upcoming</span></td></tr>
+<tr><td>Live Inventory Alerts GA</td><td>Live Inventory Alerts</td><td>2026-12-20</td><td>26%</td><td><span class="ms-tag ms-good">Upcoming</span></td></tr></tbody>
+  </table>
+
+  <footer>Cycle 2 &middot; generated 2026-10-22 16:28 UTC &middot; <a href="https://github.com/larboz/Jira-PM-Exploration">source</a></footer>
+</div>
+</body>
+</html>
