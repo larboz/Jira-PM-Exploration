@@ -1,5 +1,5 @@
 {
-  "current_cycle": 2,
+  "current_cycle": 3,
   "confluence_page_id": "425986",
   "confluence_page_url": "https://larboz13.atlassian.net/wiki/pages/viewpage.action?pageId=425986",
   "history": [
@@ -27,6 +27,23 @@
         "BE": 42,
         "API": 43,
         "FE": 44
+      }
+    },
+    {
+      "cycle": 3,
+      "features": [
+        "One-Click Reorder",
+        "Subscription Boxes",
+        "Gift Card Wallet",
+        "Multi-Currency Support"
+      ],
+      "issues_created": 96,
+      "sprint_ids": {
+        "UXD": 73,
+        "INF": 74,
+        "BE": 75,
+        "API": 76,
+        "FE": 77
       }
     }
   ]
